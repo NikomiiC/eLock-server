@@ -1,7 +1,6 @@
-require("dotenv").config();
+require('dotenv').config();
 
 // require('./models/User');
-
 
 const express = require('express');
 const mongoose = require('mongoose');
@@ -11,6 +10,8 @@ const bodyParser = require('body-parser');
 // const userRoutes = require('./routes/userRoutes');
 
 const mongoUri = process.env.MONGO_URI;
+//'mongodb+srv://elockhub:zxcasd123456@elock.5nxt5p2.mongodb.net/?retryWrites=true&w=majority'
+//process.env.MONGO_URI
 const app = express();
 const cors = require("cors");
 
@@ -23,13 +24,13 @@ app.use(bodyParser.json());
 
 // app.use(bodyParser.urlencoded({ extended: true }));
 
-// mongoose.connect(mongoUri,);
-// mongoose.connection.on('connected', () => {
-//     console.log('mongo db connected');
-// });
-// mongoose.connection.on('error', (err) => {
-//     console.log('error connecting to mongo', err);
-// });
+mongoose.connect(mongoUri,);
+mongoose.connection.on('connected', () => {
+    console.log('mongo db connected');
+});
+mongoose.connection.on('error', (err) => {
+    console.log('error connecting to mongo', err);
+});
 
 // app.get('/', requireAuth, (req, res) => {
 //     //todo: reformat response and update frontend
@@ -38,5 +39,5 @@ app.use(bodyParser.json());
 // });
 
 app.listen(8080, () => {
-    console.log('listening on port 8080');
+    console.log('listening on port 8080 ');
 });
