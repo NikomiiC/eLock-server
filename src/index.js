@@ -1,11 +1,11 @@
 require('dotenv').config();
 
-// require('./models/User');
+require('./models/User');
 
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
-// const authRoutes = require('./routes/authRoutes');
+const authRoutes = require('./routes/authRoutes');
 // const requireAuth = require('./middlewares/requireAuth');
 // const userRoutes = require('./routes/userRoutes');
 
@@ -19,7 +19,7 @@ const cors = require("cors");
 // app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(cors());
 app.use(bodyParser.json());
-// app.use(authRoutes);
+app.use(authRoutes);
 // app.use(userRoutes);
 
 // app.use(bodyParser.urlencoded({ extended: true }));
