@@ -18,11 +18,11 @@ router.post('/signup', async (req, res) => {
     try {
         const user = new User({email, password, username});
         await user.save();
-        //const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY');
-        //resResult(0, '', {token});
-        resResult(0, '', 'test');
-        // res.send({token});
-        res.send('test');
+        const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY');
+        resResult(0, '', {token});
+        //resResult(0, '', 'test');
+        res.send({token});
+        //res.send('test');
 
     } catch (err) {
         return res.status(422).send(resResult(1, err.message));

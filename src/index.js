@@ -6,7 +6,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
-// const requireAuth = require('./middlewares/requireAuth');
+const requireAuth = require('./middlewares/requireAuth');
 // const userRoutes = require('./routes/userRoutes');
 
 const mongoUri = process.env.MONGO_URI;
@@ -32,11 +32,11 @@ mongoose.connection.on('error', (err) => {
     console.log('error connecting to mongo', err);
 });
 
-// app.get('/', requireAuth, (req, res) => {
-//     //todo: reformat response and update frontend
-//     // res.send(`Your email: ${req.user.email}`);
-//     res.send(`${req.user._id}`);
-// });
+app.get('/', requireAuth, (req, res) => {
+    //NOTE: reformat response and update frontend, decide later
+    // res.send(`Your email: ${req.user.email}`);
+    res.send(`${req.user._id}`);
+});
 
 app.listen(8080, () => {
     console.log('listening on port 8080 ');
