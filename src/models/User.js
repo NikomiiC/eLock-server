@@ -32,21 +32,45 @@ const userSchema = new mongoose.Schema({
     },
 });
 
-// userSchema.methods.comparePassword = function comparePassword(candidatePassword) {
-//     // 'this' === user
-//     const user = this;
-//     return new Promise((resolve, reject) => {
-//         bcrypt.compare(candidatePassword, user.password, (err, isMatch) => {
-//             if (err) {
-//                 return reject(err);
-//             }
-//             if (!isMatch) {
-//                 return reject(false);
-//             }
-//             resolve(true);
-//         });
-//     });
-// }
+userSchema.pre('save', function (next) {
+    // 'this' means user itself
+    // if we using the () => to declare a function, then 'this' is pointing to the Class itslef (the context of the file)
+    const user = this;
+    if (!user.isModified('password')) {
+        return next();
+    }
+
+    bcrypt.genSalt(10, (err, salt) => {
+        if (err) {
+            return next(err);
+        }
+
+        bcrypt.hash(user.password, salt, (err, hash) => {
+            if (err) {
+                return next(err);
+            }
+            user.password = hash;
+            next();
+        });
+    });
+});
+
+
+userSchema.methods.comparePassword = function comparePassword(candidatePassword) {
+    // 'this' === user
+    const user = this;
+    return new Promise((resolve, reject) => {
+        bcrypt.compare(candidatePassword, user.password, (err, isMatch) => {
+            if (err) {
+                return reject(err);
+            }
+            if (!isMatch) {
+                return reject(false);
+            }
+            resolve(true);
+        });
+    });
+}
 
 //note: add fuzzy search for username blah blah for admin use maybe
 // https://www.npmjs.com/package/mongoose-fuzzy-searching
