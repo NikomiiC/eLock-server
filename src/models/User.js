@@ -30,6 +30,18 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
+    feedback_list : [{
+        feedback_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Feedback'
+        }
+    }],
+    trn_list : [{
+        transaction_id: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Transaction'
+        }
+    }],
 });
 
 userSchema.pre('save', function (next) {

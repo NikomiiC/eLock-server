@@ -1,6 +1,11 @@
 require('dotenv').config();
 
 require('./models/User');
+require('./models/Feedback');
+require('./models/Location');
+require('./models/Pricing');
+require('./models/Locker');
+require('./models/Transaction')
 
 const express = require('express');
 const mongoose = require('mongoose');
