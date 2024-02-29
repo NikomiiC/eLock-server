@@ -15,7 +15,8 @@ router.use(requireAuth); // require user to sign in first
  * Method: GET
  * @type {Router}
  */
-router.get('/all_feedbacks', async (req, res) => {
+// note: for admin, no need role check, don't configure it for normal user
+router.get('/all_feedbacks_all_user', async (req, res) => {
     const order = req.query.order,
         statusFilter = req.query.statusFilter; //filter by status
     const validateResult = requestCheck(order, statusFilter);
@@ -31,7 +32,7 @@ router.get('/all_feedbacks', async (req, res) => {
                 res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
                 break;
             case 2:
-                feedbacks = await feedbackController.getFeedbacksSortByStatusAndDescDates(statusFilter);
+                feedbacks = await feedbackController.getFeedbacksSortByStatusAndDescDates(undefined, statusFilter);
                 res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
                 break;
             default:
@@ -43,6 +44,18 @@ router.get('/all_feedbacks', async (req, res) => {
     }
 });
 
+router.get('/all_feedbacks', async (req, res) => {
+    const order = req.query.order,
+        statusFilter = req.query.statusFilter; //filter by status;
+    let feedbacks;
+    try {
+        feedbacks = await feedbackController.getFeedbacksSortByStatusAndDescDates(req.user._id, statusFilter);
+        res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
+
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
 function requestCheck(order, statusFilter) {
     if (statusFilter === null || statusFilter === undefined || statusFilter.length === 0) {
         if (order === '1') {

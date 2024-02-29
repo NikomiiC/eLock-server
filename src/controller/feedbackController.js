@@ -48,13 +48,26 @@ async function getFeedbacksSortByStatus(statusFilter) {
     }
 }
 
-async function getFeedbacksSortByStatusAndDescDates(statusFilter) {
-    try {
-        return await Feedback.find({ status: statusFilter}).sort({user_com_datetime: -1});
+async function getFeedbacksSortByStatusAndDescDates(user_id, statusFilter) {
+    if(user_id === null || user_id === undefined){
+        //admin use, to retrieve all feedbacks
+        try {
+            return await Feedback.find({ status: statusFilter}).sort({user_com_datetime: -1});
 
-    } catch (err) {
-        console.log(err.message);
-        sendError(err.message);
+        } catch (err) {
+            console.log(err.message);
+            sendError(err.message);
+        }
+    }
+    else{
+        //user use, to retrieve all feedbacks by user_id, default desc by dates not allow user to sort by dates
+        try {
+            return await Feedback.find({ status: statusFilter, user_id : user_id}).sort({user_com_datetime: -1});
+
+        } catch (err) {
+            console.log(err.message);
+            sendError(err.message);
+        }
     }
 }
 
