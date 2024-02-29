@@ -6,3 +6,7 @@ const userController = require("../controller/userController");
 const User = mongoose.model('User');
 const router = express.Router();
 router.use(requireAuth); // require user to sign in first
+
+
+
+module.exports = router;
