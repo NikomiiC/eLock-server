@@ -76,7 +76,7 @@ router.get('/feedback/:id', async (req, res) => {
 router.post('/create_feedback', async (req, res) => {
 
     const params = req.body;
-    const commentsList = params.commentsList;
+    const ticketList = params.ticketList;
     const feedback_header = params.feedback_header;
     try {
         const feedback = new Feedback(
@@ -84,14 +84,14 @@ router.post('/create_feedback', async (req, res) => {
                 feedback_header: params.feedback_header,
                 body: params.body,
                 user_id: req.user._id,
-                commentsList: params.commentsList
+                ticketList: params.ticketList
             });
         if(feedback_header === null || feedback_header === undefined || feedback_header.length === 0){
             return res
                 .status(422)
                 .send(resResult(1, 'Header is required.'));
         }
-        if (commentsList === null || commentsList === undefined || commentsList.length === 0) {
+        if (ticketList === null || ticketList === undefined || ticketList.length === 0 || ticketList.ticket_body === null || ticketList.ticket_body === undefined || ticketList.ticket_body.length === 0) {
             return res
                 .status(422)
                 .send(resResult(1, 'Feedback body is required.'));
@@ -105,6 +105,34 @@ router.post('/create_feedback', async (req, res) => {
         return res.status(422).send(resResult(1, err.message));
     }
 });
+
+router.post('/update_feedback/add_ticket/:id', async (req, res) => {
+
+    const postId = req.params.id;
+    const {body} = req.body;
+
+    try {
+        const updatedDoc = await Post.findOneAndUpdate(
+            {_id: postId},
+            {
+                "$push":
+                    {
+                        "commentsList":
+                            {
+                                "body": body,
+                                "userId": req.user._id
+                            }
+                    }
+            },
+            {
+                returnOriginal: false
+            });
+        res.send(resResult(1, `Successfully add comment`, updatedDoc));
+    } catch (err) {
+        return res.status(422).send(resResult(0, err.message));
+    }
+});
+
 function requestCheck(order, statusFilter) {
     if (statusFilter === null || statusFilter === undefined || statusFilter.length === 0) {
         if (order === '1') {

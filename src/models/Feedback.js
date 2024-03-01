@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const {sendError} = require('../util/constants');
 
 const ticketSchema = new mongoose.Schema({
-    user_com_datetime: {
+    user_ticket_datetime: {
         type: Date,
         required: true,
         default: Date.now()
@@ -43,7 +43,7 @@ const feedbackSchema = new mongoose.Schema({
         enum: ['Open', 'Closed'],
         default: 'Open'
     },
-    commentsList: [ticketSchema]
+    ticketList: [ticketSchema]
 })
 
 mongoose.model('Feedback', feedbackSchema)
