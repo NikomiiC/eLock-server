@@ -106,32 +106,32 @@ router.post('/create_feedback', async (req, res) => {
     }
 });
 
-router.post('/update_feedback/add_ticket/:id', async (req, res) => {
-
-    const postId = req.params.id;
-    const {body} = req.body;
-
-    try {
-        const updatedDoc = await Post.findOneAndUpdate(
-            {_id: postId},
-            {
-                "$push":
-                    {
-                        "commentsList":
-                            {
-                                "body": body,
-                                "userId": req.user._id
-                            }
-                    }
-            },
-            {
-                returnOriginal: false
-            });
-        res.send(resResult(1, `Successfully add comment`, updatedDoc));
-    } catch (err) {
-        return res.status(422).send(resResult(0, err.message));
-    }
-});
+// router.post('/update_feedback/add_ticket/:id', async (req, res) => {
+//
+//     const postId = req.params.id;
+//     const {body} = req.body;
+//
+//     try {
+//         const updatedDoc = await Post.findOneAndUpdate(
+//             {_id: postId},
+//             {
+//                 "$push":
+//                     {
+//                         "commentsList":
+//                             {
+//                                 "body": body,
+//                                 "userId": req.user._id
+//                             }
+//                     }
+//             },
+//             {
+//                 returnOriginal: false
+//             });
+//         res.send(resResult(0, `Successfully add comment`, updatedDoc));
+//     } catch (err) {
+//         return res.status(422).send(resResult(1, err.message));
+//     }
+// });
 
 function requestCheck(order, statusFilter) {
     if (statusFilter === null || statusFilter === undefined || statusFilter.length === 0) {
