@@ -15,7 +15,7 @@ router.use(requireAuth); // require user to sign in first
  * Method: GET
  * @type {Router}
  */
-// note: for admin, no need role check, don't configure it for normal user
+// note: for admin, no need role check, don't configure it in front end for normal user
 router.get('/all_feedbacks_all_user', async (req, res) => {
     const order = req.query.order,
         statusFilter = req.query.statusFilter; //filter by status
@@ -51,6 +51,55 @@ router.get('/all_feedbacks', async (req, res) => {
     try {
         feedbacks = await feedbackController.getFeedbacksSortByStatusAndDescDates(req.user._id, statusFilter);
         res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
+
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
+
+router.get('/feedback/:id', async (req, res) => {
+    const id = req.params.id;
+    try {
+        const feedback = await Feedback.findOne({_id: id});
+        res.send(resResult(0, 'Successfully get feedback', feedback));
+
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
+
+/**
+ * Method: POST
+ * @type {Router}
+ */
+
+router.post('/create_feedback', async (req, res) => {
+
+    const params = req.body;
+    const commentsList = params.commentsList;
+    const feedback_header = params.feedback_header;
+    try {
+        const feedback = new Feedback(
+            {
+                feedback_header: params.feedback_header,
+                body: params.body,
+                user_id: req.user._id,
+                commentsList: params.commentsList
+            });
+        if(feedback_header === null || feedback_header === undefined || feedback_header.length === 0){
+            return res
+                .status(422)
+                .send(resResult(1, 'Header is required.'));
+        }
+        if (commentsList === null || commentsList === undefined || commentsList.length === 0) {
+            return res
+                .status(422)
+                .send(resResult(1, 'Feedback body is required.'));
+        }
+        // add commentsList
+        await feedback.save();
+        await userController.updateFeedbackList(req.user._id, feedback._id);
+        return res.send(resResult(0, `Successfully create a new feedback `, feedback));
 
     } catch (err) {
         return res.status(422).send(resResult(1, err.message));

@@ -14,7 +14,28 @@ async function getRole(req) {
     return user.role;
 }
 
+async function updateFeedbackList(uid, fid) {
+    const user = await User.findById(uid);
+    if (!user) {
+        sendError('User is invalid.');
+    }
+    try {
+        await User.updateOne(
+            {'_id': uid},
+            {
+                "$push": {
+                    "feedback_list":
+                        {"postId": fid}
+                }
+            },
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 
 module.exports = {
-    getRole
+    getRole, updateFeedbackList
 }
