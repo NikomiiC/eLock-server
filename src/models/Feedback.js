@@ -1,23 +1,6 @@
 const mongoose = require('mongoose');
 const {sendError} = require('../util/constants');
 
-const ticketSchema = new mongoose.Schema({
-    user_ticket_datetime: {
-        type: Date,
-        required: true,
-        default: Date.now()
-    },
-    ticket_body:{
-        type: String,
-        required:true
-    },
-    reply_body:{
-        type: String
-    },
-    reply_datetime: {
-        type: Date
-    },
-});
 const feedbackSchema = new mongoose.Schema({
     /**
      * user_com_datetime
@@ -43,7 +26,31 @@ const feedbackSchema = new mongoose.Schema({
         enum: ['Open', 'Closed'],
         default: 'Open'
     },
-    ticketList: [ticketSchema]
+    create_datetime: {
+        type: Date,
+        required: true,
+        default: Date.now()
+    },
+    latest_update_datetime: {
+        type: Date
+    },
+    ticketList: [{
+        user_ticket_datetime: {
+            type: Date,
+            required: true,
+            default: Date.now()
+        },
+        ticket_body:{
+            type: String,
+            required:true
+        },
+        reply_body:{
+            type: String
+        },
+        reply_datetime: {
+            type: Date
+        }
+    }]
 })
 
 mongoose.model('Feedback', feedbackSchema)

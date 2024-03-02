@@ -7,18 +7,9 @@ const userController = require('/userController');
 
 let currentDate = new Date();
 
-
-async function getRole() {
-    try{
-        return await userController.getRole();
-    }catch (err){
-        console.log(err.message);
-        sendError(err.message);
-    }
-}
 async function getFeedbacksSortByDescDates() {
     try {
-        return await Feedback.find().sort({user_com_datetime: -1});
+        return await Feedback.find().sort({latest_update_datetime: -1});
         //return await Feedback.find().sort({user_com_datetime: -1});
 
     } catch (err) {
@@ -29,7 +20,7 @@ async function getFeedbacksSortByDescDates() {
 
 async function getFeedbacksSortByAscDates() {
     try {
-        return await Feedback.find().sort({user_com_datetime: 1});
+        return await Feedback.find().sort({latest_update_datetime: 1});
         //return await Feedback.find().sort({user_com_datetime: -1});
 
     } catch (err) {
@@ -40,7 +31,7 @@ async function getFeedbacksSortByAscDates() {
 
 async function getFeedbacksSortByStatus(statusFilter) {
     try {
-        return await Feedback.find({ status: statusFilter});
+        return await Feedback.find({status: statusFilter});
 
     } catch (err) {
         console.log(err.message);
@@ -49,20 +40,19 @@ async function getFeedbacksSortByStatus(statusFilter) {
 }
 
 async function getFeedbacksSortByStatusAndDescDates(user_id, statusFilter) {
-    if(user_id === null || user_id === undefined){
+    if (user_id === null || user_id === undefined) {
         //admin use, to retrieve all feedbacks
         try {
-            return await Feedback.find({ status: statusFilter}).sort({user_com_datetime: -1});
+            return await Feedback.find({status: statusFilter}).sort({latest_update_datetime: -1});
 
         } catch (err) {
             console.log(err.message);
             sendError(err.message);
         }
-    }
-    else{
+    } else {
         //user use, to retrieve all feedbacks by user_id, default desc by dates not allow user to sort by dates
         try {
-            return await Feedback.find({ status: statusFilter, user_id : user_id}).sort({user_com_datetime: -1});
+            return await Feedback.find({status: statusFilter, user_id: user_id}).sort({latest_update_datetime: -1});
 
         } catch (err) {
             console.log(err.message);
@@ -73,8 +63,17 @@ async function getFeedbacksSortByStatusAndDescDates(user_id, statusFilter) {
 
 async function getFeedbacksSortByStatusAndAscDates(statusFilter) {
     try {
-        return await Feedback.find({ status: statusFilter}).sort({user_com_datetime: 1});
+        return await Feedback.find({status: statusFilter}).sort({latest_update_datetime: 1});
 
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function getFeedbackById(id) {
+    try {
+        return await Feedback.findById(id);
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -87,5 +86,5 @@ module.exports = {
     getFeedbacksSortByStatus,
     getFeedbacksSortByStatusAndDescDates,
     getFeedbacksSortByStatusAndAscDates,
-    getRole
+    getFeedbackById
 }
