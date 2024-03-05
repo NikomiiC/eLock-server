@@ -30,11 +30,11 @@ router.get('/all_feedbacks_all_user', async (req, res) => {
     try {
         switch (validateResult) {
             case 1:
-                feedbacks = await feedbackController.getFeedbacksSortByAscDates();
+                feedbacks = await feedbackController.getFeedbacksSortByAscDates(undefined);
                 res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
                 break;
             case -1:
-                feedbacks = await feedbackController.getFeedbacksSortByDescDates();
+                feedbacks = await feedbackController.getFeedbacksSortByDescDates(undefined);
                 res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
                 break;
             case 2:
@@ -51,12 +51,28 @@ router.get('/all_feedbacks_all_user', async (req, res) => {
 });
 
 router.get('/all_feedbacks', async (req, res) => {
+    //default show open cases and desc
     const order = req.query.order,
         statusFilter = req.query.statusFilter; //filter by status;
     let feedbacks;
+    const validateResult = requestCheck(order, statusFilter);
     try {
-        feedbacks = await feedbackController.getFeedbacksSortByStatusAndDescDates(req.user._id, statusFilter);
-        res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
+        switch (validateResult) {
+            case 1:
+                feedbacks = await feedbackController.getFeedbacksSortByAscDates(req.user._id);
+                res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
+                break;
+            case -1:
+                feedbacks = await feedbackController.getFeedbacksSortByDescDates(req.user._id);
+                res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
+                break;
+            case 2:
+                feedbacks = await feedbackController.getFeedbacksSortByStatusAndDescDates(req.user._id, statusFilter);
+                res.send(resResult(0, 'Successfully get all feedbacks', feedbacks));
+                break;
+            default:
+                return res.status(422).send(resResult(1, 'Wrong type of request data'));
+        }
 
     } catch (err) {
         return res.status(422).send(resResult(1, err.message));
@@ -84,29 +100,38 @@ router.post('/create_feedback', async (req, res) => {
     const params = req.body;
     const ticketList = params.ticketList;
     const feedback_header = params.feedback_header;
+    const current_datetime = new Date.now();
+
+    ticketList.get(0).user_ticket_datetime = current_datetime; // to sync 3 datetime for later check
+    if (feedback_header === null || feedback_header === undefined || feedback_header.length === 0) {
+        return res
+            .status(422)
+            .send(resResult(1, 'Header is required.'));
+    }
+    if (ticketList === null || ticketList === undefined || ticketList.length === 0 || ticketList.get(0).ticket_body === null || ticketList.get(0).ticket_body === undefined || ticketList.get(0).ticket_body.length === 0) {
+        return res
+            .status(422)
+            .send(resResult(1, 'Feedback body is required.'));
+    }
+
     try {
         const feedback = new Feedback(
             {
                 feedback_header: params.feedback_header,
-                body: params.body,
                 user_id: req.user._id,
-                ticketList: params.ticketList
+                ticketList: params.ticketList,
+                latest_update_datetime : current_datetime,
+                create_datetime : current_datetime
             });
-        if (feedback_header === null || feedback_header === undefined || feedback_header.length === 0) {
-            return res
-                .status(422)
-                .send(resResult(1, 'Header is required.'));
-        }
-        if (ticketList === null || ticketList === undefined || ticketList.length === 0 || ticketList.ticket_body === null || ticketList.ticket_body === undefined || ticketList.ticket_body.length === 0) {
-            return res
-                .status(422)
-                .send(resResult(1, 'Feedback body is required.'));
-        }
+
         // add commentsList
         await feedback.save();
-        await userController.updateFeedbackList(req.user._id, feedback._id);
-        return res.send(resResult(0, `Successfully create a new feedback `, feedback));
-
+        try{
+            await userController.updateFeedbackList(req.user._id, feedback._id);
+            return res.send(resResult(0, `Successfully create a new feedback `, feedback));
+        }catch (err){
+            return res.status(422).send(resResult(1, err.message));
+        }
     } catch (err) {
         return res.status(422).send(resResult(1, err.message));
     }
@@ -115,25 +140,25 @@ router.post('/create_feedback', async (req, res) => {
 router.post('/update_feedback/add_ticket/:id', async (req, res) => {
 
     const feedback_id = req.params.id;
-    const {body} = req.body;
+    const params = req.body;
     const current_datetime = new Date.now();
 
     /**
-     * 1. admin or user
+     * 1. admin or user, only for user
      * 2. if status is open
-     * !! let feedback controller return feedback, sort by ticketList.
+     * !! let feedback controller return feedback
      * user:
-     *      <1> update status
-     *      <2> update latest_update_datetime
+     *      <1> update latest_update_datetime
      */
     try {
         const role = await userController.getRole();
         if (role === USER) {
+            // add a new ticket to ticketList
             let old_feedback = await feedbackController.getFeedbackById(feedback_id);
             if(old_feedback.status === OPEN){
                 let new_ticket = {
                     user_ticket_datetime : current_datetime,
-                    ticket_body : body,
+                    ticket_body : params.ticketList.get(0).ticket_body,
                     reply_body : null,
                     reply_datetime : null
                 }
@@ -146,7 +171,7 @@ router.post('/update_feedback/add_ticket/:id', async (req, res) => {
                     {
                         returnOriginal: false
                     });
-                res.send(resResult(0, `Successfully add comment`, new_feedback));
+                res.send(resResult(0, `Successfully add ticket`, new_feedback));
             }
             else{
                 return res.status(422).send(resResult(1, "This ticket is closed."));
@@ -159,14 +184,36 @@ router.post('/update_feedback/add_ticket/:id', async (req, res) => {
     }
 });
 
+router.post('/edit_feedback/update_status/:id', async (req, res) => {
+
+    /**
+     * 1. if status is open
+     * !! let feedback controller return feedback
+     * user:
+     *      <1> update status -> open to closed, closed to open
+     *      <2> update latest_update_datetime
+     */
+
+    const id = req.params.id;
+    const params = req.body;
+
+    try {
+        const new_feedback = await feedbackController.updateStatus(id, params.status);
+
+        res.send(resResult(0, `Successfully update status `, new_feedback));
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+
+});
 
 router.post('/update_feedback/edit_ticket/:id', async (req, res) => {
 
     const feedback_id = req.params.id;
-    const {body} = req.body;
+    const {reply_body} = req.body;
     const current_datetime = new Date.now();
     /**
-     * 1. admin or user
+     * 1. admin or user, only for admin
      * 2. if status is open
      * !! let feedback controller return feedback, sort by ticketList.
      * admin:
@@ -177,22 +224,19 @@ router.post('/update_feedback/edit_ticket/:id', async (req, res) => {
         const role = await userController.getRole();
         if (role === ADMIN) {
             const new_feedback = await Feedback.findOneAndUpdate(
-                {_id: feedback_id, 'ticketList.reply_datetime': {$e: ''}},
+                //todo: not sure the query need double check, the set not very sure, i scared will set all object to reply_body
+                {_id: feedback_id, ticketList: {$elemMatch: {reply_body: undefined}}},
                 {
                     latest_update_datetime : current_datetime,
-                    "$push":
-                        {
-                            "ticketList":
-                                {
-                                    "ticket_body": body,
-                                    "user_ticket_datetime": current_datetime
-                                }
-                        }
+                    "$set": {
+                        "ticketList.$.reply_body": reply_body,
+                        "ticketList.$.reply_datetime": current_datetime,
+                    }
                 },
                 {
                     returnOriginal: false
                 });
-            res.send(resResult(0, `Successfully add comment`, new_feedback));
+            res.send(resResult(0, `Successfully edit ticket`, new_feedback));
         } else {
             return res.status(422).send(resResult(1, "Only allow admin role to trigger this function."));
         }
@@ -216,7 +260,7 @@ function requestCheck(order, statusFilter) {
             return -1;
         }
     } else {
-        //without sort, default desc
+        //with sort, default desc
         return 2;
     }
 }

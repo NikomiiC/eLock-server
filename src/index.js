@@ -12,7 +12,8 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const authRoutes = require('./routes/authRoutes');
 const requireAuth = require('./middlewares/requireAuth');
-// const userRoutes = require('./routes/userRoutes');
+const userRoutes = require('./routes/userRoutes');
+const feedbackRoutes = require('./routes/feedbackRoutes');
 
 const mongoUri = process.env.MONGO_URI;
 //'mongodb+srv://elockhub:zxcasd123456@elock.5nxt5p2.mongodb.net/?retryWrites=true&w=majority'
@@ -25,7 +26,8 @@ const cors = require("cors");
 app.use(cors());
 app.use(bodyParser.json());
 app.use(authRoutes);
-// app.use(userRoutes);
+app.use(userRoutes);
+app.use(feedbackRoutes);
 
 // app.use(bodyParser.urlencoded({ extended: true }));
 
