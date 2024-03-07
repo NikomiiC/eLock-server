@@ -100,15 +100,16 @@ router.post('/create_feedback', async (req, res) => {
     const params = req.body;
     const ticketList = params.ticketList;
     const feedback_header = params.feedback_header;
-    const current_datetime = new Date.now();
+    const current_datetime = new Date();
+    console.log(current_datetime)
 
-    ticketList.get(0).user_ticket_datetime = current_datetime; // to sync 3 datetime for later check
+    ticketList[0].user_ticket_datetime = current_datetime; // to sync 3 datetime for later check
     if (feedback_header === null || feedback_header === undefined || feedback_header.length === 0) {
         return res
             .status(422)
             .send(resResult(1, 'Header is required.'));
     }
-    if (ticketList === null || ticketList === undefined || ticketList.length === 0 || ticketList.get(0).ticket_body === null || ticketList.get(0).ticket_body === undefined || ticketList.get(0).ticket_body.length === 0) {
+    if (ticketList === null || ticketList === undefined || ticketList.length === 0 || ticketList[0].ticket_body === null || ticketList[0].ticket_body === undefined || ticketList[0].ticket_body.length === 0) {
         return res
             .status(422)
             .send(resResult(1, 'Feedback body is required.'));
@@ -141,7 +142,7 @@ router.post('/update_feedback/add_ticket/:id', async (req, res) => {
 
     const feedback_id = req.params.id;
     const params = req.body;
-    const current_datetime = new Date.now();
+    const current_datetime = new Date();
 
     /**
      * 1. admin or user, only for user
@@ -151,14 +152,14 @@ router.post('/update_feedback/add_ticket/:id', async (req, res) => {
      *      <1> update latest_update_datetime
      */
     try {
-        const role = await userController.getRole();
+        const role = await userController.getRole(req);
         if (role === USER) {
             // add a new ticket to ticketList
             let old_feedback = await feedbackController.getFeedbackById(feedback_id);
             if(old_feedback.status === OPEN){
                 let new_ticket = {
                     user_ticket_datetime : current_datetime,
-                    ticket_body : params.ticketList.get(0).ticket_body,
+                    ticket_body : params.ticketList[0].ticket_body,
                     reply_body : null,
                     reply_datetime : null
                 }
@@ -211,7 +212,7 @@ router.post('/update_feedback/edit_ticket/:id', async (req, res) => {
 
     const feedback_id = req.params.id;
     const {reply_body} = req.body;
-    const current_datetime = new Date.now();
+    const current_datetime = new Date();
     /**
      * 1. admin or user, only for admin
      * 2. if status is open
@@ -221,7 +222,7 @@ router.post('/update_feedback/edit_ticket/:id', async (req, res) => {
      *      <2> update latest_update_datetime
      */
     try {
-        const role = await userController.getRole();
+        const role = await userController.getRole(req);
         if (role === ADMIN) {
             const new_feedback = await Feedback.findOneAndUpdate(
                 //todo: not sure the query need double check, the set not very sure, i scared will set all object to reply_body

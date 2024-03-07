@@ -115,7 +115,7 @@ async function updateStatus(feedback_id, status) {
         try {
             new_feedback = await Feedback.findOneAndUpdate({_id: feedback_id}, {
                 status: status,
-                latest_update_datetime: Date.now()
+                latest_update_datetime: new Date()
             }, {
                 returnOriginal: false
             });
