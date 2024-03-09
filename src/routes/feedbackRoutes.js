@@ -82,7 +82,7 @@ router.get('/all_feedbacks', async (req, res) => {
 router.get('/feedback/:id', async (req, res) => {
     const id = req.params.id;
     try {
-        const feedback = await Feedback.findOne({_id: id});
+        const feedback = await feedbackController.getFeedbackById(id);
         res.send(resResult(0, 'Successfully get feedback', feedback));
 
     } catch (err) {
