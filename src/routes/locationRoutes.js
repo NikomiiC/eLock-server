@@ -31,7 +31,14 @@ router.get('/location/:id', async(req, res) =>{
     }
 });
 
-//todo: fuzzy search by formatted_address. Front end Google API call, send backend with the formatted_address. Backend fuzzy search with the formatted address. Implement after other locations CRUD complete
+//todo:
+/**
+ * 1. fuzzy search by formatted_address. Front end Google API call, send backend with the formatted_address. Backend fuzzy search with the formatted address. Implement after other locations CRUD complete
+ * or
+ * 2. just get user's input search in locations, not go through google
+ */
+
+
 /**
  * npm i mongoose-fuzzy-searching
  * https://dev.to/briansw/implement-fuzzy-text-search-with-mongoose-1ae1
