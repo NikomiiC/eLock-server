@@ -1,6 +1,6 @@
 **node version -> 20.11.0**
 
-*npm install* to install all dependencies
+*npm install* to install all dependencies, (Run npm install -legacy-peer-deps instead if faced any dependency error)
 
 *npm run dev* to run the server, any changes will auto-rerun
 
