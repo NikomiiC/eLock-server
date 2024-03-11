@@ -6,10 +6,10 @@ const {sendError} = require('../util/constants');
 
 let currentDate = new Date();
 
-async function getAllLocations(){
-    try{
+async function getAllLocations() {
+    try {
         return await Location.find();
-    }catch (err){
+    } catch (err) {
         console.log(err.message);
         sendError(err.message);
     }
@@ -26,7 +26,7 @@ async function getLocationById(id) {
 
 async function getLocationByPostcode(postcode) {
     try {
-        return await Location.findOne({postcode :postcode});
+        return await Location.findOne({postcode: postcode});
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -35,7 +35,7 @@ async function getLocationByPostcode(postcode) {
 
 async function getLocationsByArea(area) {
     try {
-        return await Location.find({area :area});
+        return await Location.find({area: area});
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -61,6 +61,19 @@ async function getLocationsByLonLat(lon, lat) {
     }
 }
 
+async function addLockers(location_id, lockerList) {
+    try {
+        return await Location.findOneAndUpdate(
+            {_id: location_id},
+            {$push: {locker_list: {$each: lockerList}}},
+            {returnOriginal: false}
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 // async function getLocationsByAddressName(addressName) {
 //     try {
 //         return await Location.fuzzySearch({query: addressName, limit: 20});
@@ -75,6 +88,7 @@ module.exports = {
     getLocationById,
     getLocationByPostcode,
     getLocationsByArea,
-    getLocationsByLonLat
+    getLocationsByLonLat,
+    addLockers
     //getLocationsByAddressName
 }

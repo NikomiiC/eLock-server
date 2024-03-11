@@ -5,6 +5,7 @@ const {resResult, sendError} = require('../util/constants');
 const locationController = require("../controller/locationController");
 const userController = require("../controller/userController");
 const serviceUtil = require("../controller/serviceController")
+const feedbackController = require("../controller/feedbackController");
 const Location = mongoose.model('Location');
 const router = express.Router();
 router.use(requireAuth); // require user to sign in first
@@ -135,7 +136,28 @@ router.post('/create_location', async (req, res) => {
                 return res.status(422).send(resResult(1, err.message));
             }
         }
+        else{
+            return res.status(422).send(resResult(1, "User has no permission to create location."));
+        }
     }catch (err){
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
+
+// update location's locker list
+router.post('/update_location/add_lockers/:id', async (req, res) => {
+
+    const location_id = req.params.id;
+    const params = req.body;
+    try {
+        const role = await userController.getRole(req);
+        if (role === ADMIN) {
+            let new_location = await locationController.addLockers(location_id, params.locker_list);
+            res.send(resResult(0, `Successfully add lockers to location ${location_id}`, new_location));
+        } else {
+            return res.status(422).send(resResult(1, "User has no permission to add lockers to location."));
+        }
+    } catch (err) {
         return res.status(422).send(resResult(1, err.message));
     }
 });
