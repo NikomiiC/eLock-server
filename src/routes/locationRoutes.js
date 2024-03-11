@@ -3,9 +3,19 @@ const mongoose = require('mongoose');
 const requireAuth = require('../middlewares/requireAuth');
 const {resResult, sendError} = require('../util/constants');
 const locationController = require("../controller/locationController");
+const userController = require("../controller/userController");
+const serviceUtil = require("../controller/serviceController")
 const Location = mongoose.model('Location');
 const router = express.Router();
 router.use(requireAuth); // require user to sign in first
+
+
+/**
+ * CONSTANTS
+ */
+const LOC_SIZE = 2;
+const USER = 'u';
+const ADMIN = 'admin';
 
 /**
  * Method: GET
@@ -83,6 +93,50 @@ router.get('/locations/:lon/:lat', async(req, res) =>{
         res.send(resResult(0, 'Successfully get locations', locations));
     }catch (err){
         return res.status(422).send(resResult(1, `Fail to get locations ` + err.message));
+    }
+});
+
+
+/**
+ * Method: POST
+ * @type {Router}
+ */
+
+router.post('/create_location', async (req, res) => {
+
+    //save locker_list will be separate function
+    const params = req.body;
+    const area = params.area;
+    const formatted_address = params.formatted_address;
+    const postcode = params.postcode;
+    const loc = params.loc;
+
+    // role check
+    try{
+        const role = await userController.getRole(req);
+        if(role === ADMIN){
+            // empty fields check
+            if(serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.length !== LOC_SIZE){
+                return res
+                    .status(422)
+                    .send(resResult(1, `Please pass all parameters. area: ${area}, formatted_address: ${formatted_address}, postcode: ${postcode}, loc: ${loc} `));
+            }
+            try {
+                const location = new Location(
+                    {
+                        area: area,
+                        formatted_address: formatted_address,
+                        postcode: postcode,
+                        loc : loc,
+                    });
+                // add location
+                await location.save();
+            } catch (err) {
+                return res.status(422).send(resResult(1, err.message));
+            }
+        }
+    }catch (err){
+        return res.status(422).send(resResult(1, err.message));
     }
 });
 
