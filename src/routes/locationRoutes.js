@@ -162,4 +162,43 @@ router.post('/update_location/add_lockers/:id', async (req, res) => {
     }
 });
 
+//update location with full document, when admin update any fields need to pass the full document
+router.post('/update_location/:id', async (req, res) => {
+
+    const location_id = req.params.id;
+    const params = req.body;
+    const area = params.area;
+    const formatted_address = params.formatted_address;
+    const postcode = params.postcode;
+    const loc = params.loc;
+
+    // role check
+    try{
+        const role = await userController.getRole(req);
+        if(role === ADMIN){
+            // empty fields check
+            if(serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.length !== LOC_SIZE){
+                return res
+                    .status(422)
+                    .send(resResult(1, `Please pass all parameters. area: ${area}, formatted_address: ${formatted_address}, postcode: ${postcode}, loc: ${loc} `));
+            }
+            try {
+                const new_location = await Location.findOneAndUpdate(
+                    {_id: location_id},
+                    params,
+                    {returnOriginal: false}
+                );
+                res.send(resResult(0, `Successfully update location ${location_id}`, new_location));
+            } catch (err) {
+                return res.status(422).send(resResult(1, err.message));
+            }
+        }
+        else{
+            return res.status(422).send(resResult(1, "User has no permission to update location."));
+        }
+    }catch (err){
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
+
 module.exports = router;
