@@ -13,7 +13,7 @@ const VALID = 'Valid';
 async function getOccupiedLockersByIds(locker_id_list) {
     try {
         return await Locker.find(
-            {_id: {$in: locker_id_list}, status : OCCUPIED}
+            {_id: {$in: locker_id_list}, status: OCCUPIED}
         );
     } catch (err) {
         console.log(err.message);
@@ -24,7 +24,7 @@ async function getOccupiedLockersByIds(locker_id_list) {
 async function deleteLockersByIds(locker_id_list) {
     try {
         return await Locker.deleteMany(
-            {_id: {$in: locker_id_list}, status : VALID}
+            {_id: {$in: locker_id_list}, status: VALID}
         );
     } catch (err) {
         console.log(err.message);
@@ -44,16 +44,51 @@ async function insertManyLockers(docs) {
 async function getLocatedLockersByIds(locker_id_list) {
     try {
         return await Locker.find(
-            {_id: {$in: locker_id_list}, location_id : { $ne : null }}
+            {_id: {$in: locker_id_list}, location_id: {$ne: null}}
         );
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
     }
 }
+
+async function updateLocationByIds(location_id, locker_id_list) {
+    try {
+        //updateMany dont return updated docs, have to do another query
+        return await Locker.updateMany(
+            {_id: {$in: locker_id_list}},
+            {location_id: location_id}
+        );
+        // return await Locker.find(
+        //     {_id: {$in: locker_id_list}}
+        // )
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function removeLocationByIds(locker_id_list) {
+    try {
+        return await Locker.updateMany(
+            {_id: {$in: locker_id_list}},
+            {$unset: { location_id: ""}}
+        );
+
+        // return await Locker.find(
+        //     {_id: {$in: locker_id_list}}
+        // )
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     getOccupiedLockersByIds,
     deleteLockersByIds,
     insertManyLockers,
-    getLocatedLockersByIds
+    getLocatedLockersByIds,
+    updateLocationByIds,
+    removeLocationByIds
 }

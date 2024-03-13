@@ -66,14 +66,13 @@ async function addLockers(location_id, lockerList) {
     try {
         //check if lockers has been linked with other location
         const locatedLockers = await lockerController.getLocatedLockersByIds(lockerList);
-        if(locatedLockers === undefined || locatedLockers.length === 0){
+        if (locatedLockers === undefined || locatedLockers.length === 0) {
             return await Location.findOneAndUpdate(
                 {_id: location_id},
                 {$push: {locker_list: {$each: lockerList}}},//{$each: lockerList}
                 {returnOriginal: false}
             );
-        }
-        else{
+        } else {
             sendError(`Lockers has been assigned to a location, ${locatedLockers}`);
         }
 
@@ -103,6 +102,19 @@ async function deleteLocationById(location_id) {
     }
 }
 
+async function removeLockersById(location_id, locker_list) {
+    try {
+        return await Location.findOneAndUpdate(
+            {_id: location_id},
+            {"$pull": {locker_list: {$in: locker_list}}},
+            {returnOriginal: false}
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     getAllLocations,
     getLocationById,
@@ -110,6 +122,7 @@ module.exports = {
     getLocationsByArea,
     getLocationsByLonLat,
     addLockers,
-    deleteLocationById
+    deleteLocationById,
+    removeLockersById
     //getLocationsByAddressName
 }

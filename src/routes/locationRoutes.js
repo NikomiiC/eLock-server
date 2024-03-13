@@ -155,6 +155,8 @@ router.post('/update_location/add_lockers/:id', async (req, res) => {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
             let new_location = await locationController.addLockers(location_id, params.locker_list);
+            //update locker's location id
+            await lockerController.updateLocationByIds(location_id, params.locker_list);
             res.send(resResult(0, `Successfully add lockers to location ${location_id}`, new_location));
         } else {
             return res.status(422).send(resResult(1, "User has no permission to add lockers to location."));
@@ -164,7 +166,7 @@ router.post('/update_location/add_lockers/:id', async (req, res) => {
     }
 });
 
-//update location with full document, when admin update any fields need to pass the full document
+//update location with full document, when admin update any fields need to pass the full document, but not locker list
 router.post('/update_location/:id', async (req, res) => {
 
     const location_id = req.params.id;
@@ -179,7 +181,7 @@ router.post('/update_location/:id', async (req, res) => {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
             // empty fields check
-            if (serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.length !== LOC_SIZE) {
+            if (serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.coordinates.length !== LOC_SIZE) {
                 return res
                     .status(422)
                     .send(resResult(1, `Please pass all parameters. area: ${area}, formatted_address: ${formatted_address}, postcode: ${postcode}, loc: ${loc} `));
@@ -191,6 +193,48 @@ router.post('/update_location/:id', async (req, res) => {
                     {returnOriginal: false}
                 );
                 res.send(resResult(0, `Successfully update location ${location_id}`, new_location));
+            } catch (err) {
+                return res.status(422).send(resResult(1, err.message));
+            }
+        } else {
+            return res.status(422).send(resResult(1, "User has no permission to update location."));
+        }
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
+
+router.post('/update_location/remove_lockers/:id', async (req, res) => {
+
+    const location_id = req.params.id;
+    const params = req.body;
+    const locker_list = params.locker_list;
+
+    // role check
+    try {
+        const role = await userController.getRole(req);
+        if (role === ADMIN) {
+            // empty fields check
+            if (locker_list.length === 0) {
+                return res
+                    .status(422)
+                    .send(resResult(1, `Please pass locker_list with IDs `));
+            }
+            try {
+                const location = await locationController.getLocationById(location_id);
+                //check if lockers occupied
+                const occupiedLockers = await lockerController.getOccupiedLockersByIds(location.locker_list);
+
+                if(occupiedLockers.length === 0){
+                    //pull from locker_list
+                    const new_location = await locationController.removeLockersById(location_id, locker_list);
+                    //remove location_id from locker
+                    await lockerController.removeLocationByIds(params.locker_list);
+                    res.send(resResult(0, `Successfully remove lockers from location ${location_id}`, new_location));
+                }
+                else{
+                    return res.status(422).send(resResult(1, `Remove lockers failed, lockers are occupied`));
+                }
             } catch (err) {
                 return res.status(422).send(resResult(1, err.message));
             }
@@ -222,7 +266,7 @@ router.delete('/delete_location/:id', async (req, res) => {
                 const location = await locationController.getLocationById(location_id);
                 //check if lockers occupied
                 const occupiedLockers = await lockerController.getOccupiedLockersByIds(location.locker_list);
-                if(occupiedLockers === null || occupiedLockers === undefined){
+                if(occupiedLockers.length === 0){
                     //update transaction locker id to removed, try first not sure if can assign string to _id
                     await transactionController.updateRemovedLockersIdToNull(location.locker_list);
                     await lockerController.deleteLockersByIds(location.locker_list);
