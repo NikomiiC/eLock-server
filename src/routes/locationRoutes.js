@@ -6,6 +6,8 @@ const locationController = require("../controller/locationController");
 const userController = require("../controller/userController");
 const serviceUtil = require("../controller/serviceController")
 const feedbackController = require("../controller/feedbackController");
+const lockerController = require("../controller/lockerController");
+const transactionController = require("../controller/transactionController");
 const Location = mongoose.model('Location');
 const router = express.Router();
 router.use(requireAuth); // require user to sign in first
@@ -22,22 +24,22 @@ const ADMIN = 'admin';
  * Method: GET
  */
 
-router.get('/all_locations', async(req, res) =>{
+router.get('/all_locations', async (req, res) => {
     let locations;
-    try{
+    try {
         locations = await locationController.getAllLocations();
         res.send(resResult(0, 'Successfully get all locations', locations));
-    }catch (err){
+    } catch (err) {
         return res.status(422).send(resResult(1, `Fail to get all locations ` + err.message));
     }
 });
 
-router.get('/location/:id', async(req, res) =>{
+router.get('/location/:id', async (req, res) => {
     const id = req.params.id;
-    try{
+    try {
         const location = await locationController.getLocationById(id);
         res.send(resResult(0, 'Successfully get location', location));
-    }catch (err){
+    } catch (err) {
         return res.status(422).send(resResult(1, `Fail to get location ` + err.message));
     }
 });
@@ -66,33 +68,33 @@ router.get('/location/:id', async(req, res) =>{
 //     }
 // });
 
-router.get('/location/:postcode', async(req, res) =>{
+router.get('/location/:postcode', async (req, res) => {
     const postcode = req.params.postcode;
-    try{
+    try {
         const location = await locationController.getLocationByPostcode(postcode);
         res.send(resResult(0, 'Successfully get location', location));
-    }catch (err){
+    } catch (err) {
         return res.status(422).send(resResult(1, `Fail to get location ` + err.message));
     }
 });
 
-router.get('/locations/:area', async(req, res) =>{
+router.get('/locations/:area', async (req, res) => {
     const area = req.params.area;
-    try{
+    try {
         const locations = await locationController.getLocationsByArea(area);
         res.send(resResult(0, 'Successfully get locations', locations));
-    }catch (err){
+    } catch (err) {
         return res.status(422).send(resResult(1, `Fail to get locations ` + err.message));
     }
 });
 
-router.get('/locations/:lon/:lat', async(req, res) =>{
+router.get('/locations/:lon/:lat', async (req, res) => {
     const lon = req.params.lon;
     const lat = req.params.lat;
-    try{
+    try {
         const locations = await locationController.getLocationsByLonLat(lon, lat);
         res.send(resResult(0, 'Successfully get locations', locations));
-    }catch (err){
+    } catch (err) {
         return res.status(422).send(resResult(1, `Fail to get locations ` + err.message));
     }
 });
@@ -113,11 +115,11 @@ router.post('/create_location', async (req, res) => {
     const loc = params.loc;
 
     // role check
-    try{
+    try {
         const role = await userController.getRole(req);
-        if(role === ADMIN){
+        if (role === ADMIN) {
             // empty fields check
-            if(serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.length !== LOC_SIZE){
+            if (serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.length !== LOC_SIZE) {
                 return res
                     .status(422)
                     .send(resResult(1, `Please pass all parameters. area: ${area}, formatted_address: ${formatted_address}, postcode: ${postcode}, loc: ${loc} `));
@@ -128,18 +130,17 @@ router.post('/create_location', async (req, res) => {
                         area: area,
                         formatted_address: formatted_address,
                         postcode: postcode,
-                        loc : loc,
+                        loc: loc,
                     });
                 // add location
                 await location.save();
             } catch (err) {
                 return res.status(422).send(resResult(1, err.message));
             }
-        }
-        else{
+        } else {
             return res.status(422).send(resResult(1, "User has no permission to create location."));
         }
-    }catch (err){
+    } catch (err) {
         return res.status(422).send(resResult(1, err.message));
     }
 });
@@ -173,11 +174,11 @@ router.post('/update_location/:id', async (req, res) => {
     const loc = params.loc;
 
     // role check
-    try{
+    try {
         const role = await userController.getRole(req);
-        if(role === ADMIN){
+        if (role === ADMIN) {
             // empty fields check
-            if(serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.length !== LOC_SIZE){
+            if (serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.length !== LOC_SIZE) {
                 return res
                     .status(422)
                     .send(resResult(1, `Please pass all parameters. area: ${area}, formatted_address: ${formatted_address}, postcode: ${postcode}, loc: ${loc} `));
@@ -192,11 +193,47 @@ router.post('/update_location/:id', async (req, res) => {
             } catch (err) {
                 return res.status(422).send(resResult(1, err.message));
             }
-        }
-        else{
+        } else {
             return res.status(422).send(resResult(1, "User has no permission to update location."));
         }
-    }catch (err){
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
+
+/**
+ * delete a location, delete only when all lockers under this location are not occupied, update corresponding transaction's locker_id to "removed". then delete the lockers as well
+ *
+ * for front end display transactions to user/admin, check if locker_id is === "removed" and status is "Completed", if yes can display this locker is not available currently
+ */
+
+router.delete('/delete_location/:id', async (req, res) => {
+    const location_id = req.params.id;
+// role check
+    try {
+        const role = await userController.getRole(req);
+        if (role === ADMIN) {
+
+            try {
+                const location = await locationController.getLocationById(location_id);
+                //check if lockers occupied
+                const occupiedLockers = await lockerController.getOccupiedLockersByIds(location.locker_list);
+                if(occupiedLockers === null || occupiedLockers === undefined){
+                    //update transaction locker id to removed, try first not sure if can assign string to _id
+                    await transactionController.updateRemovedLockersIdToNull(location.locker_list);
+                    await lockerController.deleteLockersByIds(location.locker_list);
+                    await locationController.deleteLocationById(location_id);
+                }
+                else{
+                    return res.status(422).send(resResult(1, `Location ${location_id} has lockers in use, cannot delete this location.`));
+                }
+                res.send(resResult(0, `Successfully delete the location ${location_id}`));
+            } catch (err) {
+                return res.status(422).send(resResult(1, err.message));
+            }
+        }
+
+    } catch (err) {
         return res.status(422).send(resResult(1, err.message));
     }
 });

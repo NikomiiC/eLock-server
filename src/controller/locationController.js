@@ -89,6 +89,7 @@ module.exports = {
     getLocationByPostcode,
     getLocationsByArea,
     getLocationsByLonLat,
-    addLockers
+    addLockers,
+    deleteLocationById
     //getLocationsByAddressName
 }

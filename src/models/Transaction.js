@@ -34,7 +34,15 @@ const transactionSchema = new mongoose.Schema({
     cost: {
         type: Number,
         default: 0
-    }
+    },
+    create_datetime: {
+        type: Date,
+        required: true,
+        default: Date.now()
+    },
+    latest_update_datetime: {
+        type: Date
+    },
 })
 
 mongoose.model('Transaction', transactionSchema)
