@@ -41,8 +41,19 @@ async function insertManyLockers(docs) {
     }
 }
 
+async function getLocatedLockersByIds(locker_id_list) {
+    try {
+        return await Locker.find(
+            {_id: {$in: locker_id_list}, location_id : { $ne : null }}
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
 module.exports = {
     getOccupiedLockersByIds,
     deleteLockersByIds,
-    insertManyLockers
+    insertManyLockers,
+    getLocatedLockersByIds
 }

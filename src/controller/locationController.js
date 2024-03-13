@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const Location = mongoose.model('Location');
 const {sendError} = require('../util/constants');
+const lockerController = require('./lockerController');
 //note: test date
 //let currentDate = new Date('2024-03-01T14:51:06.157Z');
 
@@ -63,11 +64,19 @@ async function getLocationsByLonLat(lon, lat) {
 
 async function addLockers(location_id, lockerList) {
     try {
-        return await Location.findOneAndUpdate(
-            {_id: location_id},
-            {$push: {locker_list: {$each: lockerList}}},
-            {returnOriginal: false}
-        );
+        //check if lockers has been linked with other location
+        const locatedLockers = await lockerController.getLocatedLockersByIds(lockerList);
+        if(locatedLockers === undefined || locatedLockers.length === 0){
+            return await Location.findOneAndUpdate(
+                {_id: location_id},
+                {$push: {locker_list: {$each: lockerList}}},//{$each: lockerList}
+                {returnOriginal: false}
+            );
+        }
+        else{
+            sendError(`Lockers has been assigned to a location, ${locatedLockers}`);
+        }
+
     } catch (err) {
         console.log(err.message);
         sendError(err.message);

@@ -20,16 +20,14 @@ const transactionSchema = new mongoose.Schema({
         ref: 'Locker',
         required: true
     },
-    status:{
+    status: {
         type: String,
         enum: ['Booked', 'Ongoing', 'Completed'],
         default: 'Booked'
     },
-    feedback_list : [{
-        feedback_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Feedback'
-        }
+    feedback_list: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Feedback'
     }],
     cost: {
         type: Number,

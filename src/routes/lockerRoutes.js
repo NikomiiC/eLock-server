@@ -27,11 +27,11 @@ router.post('/create_lockers', async (req, res) => {
     // empty fields check
     for (const doc of params) {
         const size = doc.size;
-        const location_id = doc.location_id;
-        if (serviceUtil.isStringValNullOrEmpty(size) || location_id === null || location_id === undefined) {
+        //const location_id = doc.location_id;
+        if (serviceUtil.isStringValNullOrEmpty(size)) {
             return res
                 .status(422)
-                .send(resResult(1, `Please pass all parameters. size: ${size}, location_id: ${location_id}`));
+                .send(resResult(1, `Please pass all parameters. size: ${size}`));
         }
     }
     // role check

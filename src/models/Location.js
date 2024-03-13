@@ -33,12 +33,9 @@ const locationSchema = new mongoose.Schema({
             required: true
         }
     },
-    locker_list : [{
-        locker_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Locker'
-        }
-    }]
+    locker_list : [
+        { type: mongoose.Schema.Types.ObjectId, ref: 'Locker' }
+    ]
 })
 
 locationSchema.index({location: '2dsphere'});

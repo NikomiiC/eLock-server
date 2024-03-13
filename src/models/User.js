@@ -30,17 +30,13 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: null
     },
-    feedback_list : [{
-        feedback_id: {
+    feedback_list: [{
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Feedback'
-        }
     }],
-    trn_list : [{
-        transaction_id: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Transaction'
-        }
+    trn_list: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Transaction'
     }],
 });
 

@@ -20,8 +20,7 @@ const lockerSchema = new mongoose.Schema({
     },
     location_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Location',
-        required: true //decide later
+        ref: 'Location'
     },
     trn_id: {
         type: mongoose.Schema.Types.ObjectId,
