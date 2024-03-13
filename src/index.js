@@ -14,6 +14,9 @@ const authRoutes = require('./routes/authRoutes');
 const requireAuth = require('./middlewares/requireAuth');
 const userRoutes = require('./routes/userRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
+const locationRoutes = require('./routes/locationRoutes');
+const lockerRoutes = require('./routes/lockerRoutes');
+
 
 const mongoUri = process.env.MONGO_URI;
 //'mongodb+srv://elockhub:zxcasd123456@elock.5nxt5p2.mongodb.net/?retryWrites=true&w=majority'
@@ -28,6 +31,8 @@ app.use(bodyParser.json());
 app.use(authRoutes);
 app.use(userRoutes);
 app.use(feedbackRoutes);
+app.use(locationRoutes);
+app.use(lockerRoutes);
 
 // app.use(bodyParser.urlencoded({ extended: true }));
 

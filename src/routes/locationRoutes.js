@@ -119,7 +119,7 @@ router.post('/create_location', async (req, res) => {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
             // empty fields check
-            if (serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.length !== LOC_SIZE) {
+            if (serviceUtil.isStringValNullOrEmpty(area) || serviceUtil.isStringValNullOrEmpty(formatted_address) || serviceUtil.isStringValNullOrEmpty(postcode) || loc.coordinates.length !== LOC_SIZE) {
                 return res
                     .status(422)
                     .send(resResult(1, `Please pass all parameters. area: ${area}, formatted_address: ${formatted_address}, postcode: ${postcode}, loc: ${loc} `));
@@ -134,6 +134,7 @@ router.post('/create_location', async (req, res) => {
                     });
                 // add location
                 await location.save();
+                res.send(resResult(0, `Successfully add a new location`, location));
             } catch (err) {
                 return res.status(422).send(resResult(1, err.message));
             }
@@ -201,6 +202,9 @@ router.post('/update_location/:id', async (req, res) => {
     }
 });
 
+/**
+ * Method - DELETE
+ */
 /**
  * delete a location, delete only when all lockers under this location are not occupied, update corresponding transaction's locker_id to "removed". then delete the lockers as well
  *

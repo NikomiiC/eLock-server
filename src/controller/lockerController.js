@@ -32,7 +32,17 @@ async function deleteLockersByIds(locker_id_list) {
     }
 }
 
+async function insertManyLockers(docs) {
+    try {
+        return await Locker.insertMany(docs);
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     getOccupiedLockersByIds,
-    deleteLockersByIds
+    deleteLockersByIds,
+    insertManyLockers
 }

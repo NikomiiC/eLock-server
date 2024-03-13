@@ -83,6 +83,17 @@ async function addLockers(location_id, lockerList) {
 //     }
 // }
 
+async function deleteLocationById(location_id) {
+    try {
+        return await Location.deleteOne(
+            {_id: location_id}
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     getAllLocations,
     getLocationById,
