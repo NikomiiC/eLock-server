@@ -27,7 +27,7 @@ async function getLocationById(id) {
 
 async function getLocationByPostcode(postcode) {
     try {
-        return await Location.findOne({postcode: postcode});
+        return await Location.find({postcode: postcode});
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -45,17 +45,19 @@ async function getLocationsByArea(area) {
 
 async function getLocationsByLonLat(lon, lat) {
     try {
-        return await Location.find({
-            loc: {
-                $near: {
-                    $maxDistance: 1000,
-                    $geometry: {
-                        type: "Point",
-                        coordinates: [lon, lat],
-                    },
+        return await Location.aggregate([
+            {
+                $geoNear: {
+                    near: { type: "Point", coordinates: [parseFloat(lon), parseFloat(lat)] },
+                    distanceField: "dist.calculated",
+                    maxDistance: 5000,//meter
+                    //query: { category: "Parks" },
+                    includeLocs: "dist.location",
+                    spherical: true
                 }
-            }
-        });
+            },
+            //{ $limit: 5 }
+        ])
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -115,6 +117,18 @@ async function removeLockersById(location_id, locker_list) {
     }
 }
 
+async function isDuplicatePostcode(postcode) {
+    try {
+        const location = await Location.find(
+            {postcode: postcode}
+        );
+        return (location.length !== 0);
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     getAllLocations,
     getLocationById,
@@ -123,6 +137,7 @@ module.exports = {
     getLocationsByLonLat,
     addLockers,
     deleteLocationById,
-    removeLockersById
+    removeLockersById,
+    isDuplicatePostcode
     //getLocationsByAddressName
 }

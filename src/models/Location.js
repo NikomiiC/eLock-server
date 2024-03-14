@@ -19,6 +19,7 @@ const locationSchema = new mongoose.Schema({
     },
     postcode: {
         type: String,
+        unique: true,
         require: true
     },
     loc: {
@@ -38,5 +39,5 @@ const locationSchema = new mongoose.Schema({
     ]
 })
 
-locationSchema.index({location: '2dsphere'});
+locationSchema.index({loc: '2dsphere'});
 mongoose.model('Location', locationSchema)

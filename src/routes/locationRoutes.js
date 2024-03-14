@@ -68,7 +68,7 @@ router.get('/location/:id', async (req, res) => {
 //     }
 // });
 
-router.get('/location/:postcode', async (req, res) => {
+router.get('/location_postcode/:postcode', async (req, res) => {
     const postcode = req.params.postcode;
     try {
         const location = await locationController.getLocationByPostcode(postcode);
@@ -91,9 +91,15 @@ router.get('/locations/:area', async (req, res) => {
 router.get('/locations/:lon/:lat', async (req, res) => {
     const lon = req.params.lon;
     const lat = req.params.lat;
+
     try {
         const locations = await locationController.getLocationsByLonLat(lon, lat);
-        res.send(resResult(0, 'Successfully get locations', locations));
+        if(locations.length !== 0){
+            res.send(resResult(0, 'Successfully get locations', locations));
+        }
+        else{
+            res.send(resResult(0, 'No near locations found', locations));
+        }
     } catch (err) {
         return res.status(422).send(resResult(1, `Fail to get locations ` + err.message));
     }
@@ -125,6 +131,12 @@ router.post('/create_location', async (req, res) => {
                     .send(resResult(1, `Please pass all parameters. area: ${area}, formatted_address: ${formatted_address}, postcode: ${postcode}, loc: ${loc} `));
             }
             try {
+                //check if duplicate postcode
+                if(await locationController.isDuplicatePostcode(postcode)){
+                    return res
+                        .status(422)
+                        .send(resResult(1, `Add failed, postcode: ${postcode} already exist`));
+                }
                 const location = new Location(
                     {
                         area: area,
