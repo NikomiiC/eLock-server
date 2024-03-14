@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const {sendError} = require('../util/constants');
+const mongoose_fuzzy_searching = require('mongoose-fuzzy-searching');
 
 const locationSchema = new mongoose.Schema({
     /**
@@ -38,6 +39,6 @@ const locationSchema = new mongoose.Schema({
         { type: mongoose.Schema.Types.ObjectId, ref: 'Locker' }
     ]
 })
-
+locationSchema.plugin(mongoose_fuzzy_searching, { fields: ['formatted_address'] });
 locationSchema.index({loc: '2dsphere'});
 mongoose.model('Location', locationSchema)

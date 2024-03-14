@@ -13,9 +13,10 @@ const REMOVED = 'Removed';
 
 async function updateRemovedLockersIdToNull(locker_id_list) {
     try {
+        //todo: haven't test till this part, so far no transaction
         return await Transaction.findOneAndUpdate(
             {locker_id: {$in: locker_id_list}, status: COMPLETED},
-            {locker_id: REMOVED, latest_update_datetime: new Date()},
+            {$unset: { locker_id: ""}, latest_update_datetime: new Date()},
             {returnOriginal: false}
         );
     } catch (err) {

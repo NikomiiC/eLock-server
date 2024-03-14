@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const Location = mongoose.model('Location');
 const {sendError} = require('../util/constants');
 const lockerController = require('./lockerController');
+//const mongoose_fuzzy_searching = require('mongoose-fuzzy-searching');
 //note: test date
 //let currentDate = new Date('2024-03-01T14:51:06.157Z');
 
@@ -84,14 +85,14 @@ async function addLockers(location_id, lockerList) {
     }
 }
 
-// async function getLocationsByAddressName(addressName) {
-//     try {
-//         return await Location.fuzzySearch({query: addressName, limit: 20});
-//     } catch (err) {
-//         console.log(err.message);
-//         sendError(err.message);
-//     }
-// }
+async function getLocationsByAddressName(addressName) {
+    try {
+        return await Location.fuzzySearch(addressName);
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
 
 async function deleteLocationById(location_id) {
     try {
@@ -138,6 +139,6 @@ module.exports = {
     addLockers,
     deleteLocationById,
     removeLockersById,
-    isDuplicatePostcode
-    //getLocationsByAddressName
+    isDuplicatePostcode,
+    getLocationsByAddressName
 }

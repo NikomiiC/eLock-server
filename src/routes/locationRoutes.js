@@ -58,15 +58,15 @@ router.get('/location/:id', async (req, res) => {
  * try later
  */
 
-// router.get('/location/:addressName', async(req, res) =>{
-//     const addressName = req.params.addressName;
-//     try{
-//         const location = await locationController.getLocationsByAddressName(addressName);
-//         res.send(resResult(0, 'Successfully get locations', location));
-//     }catch (err){
-//         return res.status(422).send(resResult(1, `Fail to get locations ` + err.message));
-//     }
-// });
+router.get('/location/addressName/:addressName', async(req, res) =>{
+    const addressName = req.params.addressName;
+    try{
+        const location = await locationController.getLocationsByAddressName(addressName);
+        res.send(resResult(0, 'Successfully get locations', location));
+    }catch (err){
+        return res.status(422).send(resResult(1, `Fail to get locations ` + err.message));
+    }
+});
 
 router.get('/location_postcode/:postcode', async (req, res) => {
     const postcode = req.params.postcode;
