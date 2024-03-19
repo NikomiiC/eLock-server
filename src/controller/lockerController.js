@@ -11,8 +11,6 @@ const VALID = 'Valid';
 const SMALL = 'Small';
 const MEDIUM = 'Medium';
 const LARGE = 'Large';
-const ENUM_STATUS = ['Occupied', 'Valid'];
-const ENUM_SIZE = ['Small', 'Medium', 'Large'];
 
 async function getOccupiedLockersByIds(locker_id_list) {
     try {
@@ -140,34 +138,40 @@ async function getLockersByLocationId(location_id, status, size) {
      * 1. have status no size
      * 2. no status have size
      * 3. have status have size
+     * !! status : valid & occupied, -1 will get valid first
      */
 
-    let m, add_status, add_size, s, result;
-
+    let m, add_size, s, result;
     try {
-        m = {"$match": {$and: [{"status": {"$in": ENUM_STATUS}}, {"size": {"$in": ENUM_SIZE}}]}};
-        add_status = {"$addFields": {"__status_order": {"$indexOfArray": [ENUM_STATUS, "$status"]}}};
-        add_size = {"$addFields": {"__size_order": {"$indexOfArray": [ENUM_SIZE, "$size"]}}};
+        m = {"$match": {location_id: new mongoose.Types.ObjectId(location_id)}};
+        add_size = {
+            $addFields: {
+                __size_order: {
+                    $switch: {
+                        branches: [
+                            {case: {$eq: ['$size', SMALL]}, then: 0},
+                            {case: {$eq: ['$size', MEDIUM]}, then: 1},
+                            {case: {$eq: ['$size', LARGE]}, then: 2}
+                        ],
+                        default: 3,
+                    },
+                }
+            },
+        };
 
         if ((serviceUtil.isStringValNullOrEmpty(status) && serviceUtil.isStringValNullOrEmpty(size)) || (!serviceUtil.isStringValNullOrEmpty(status) && serviceUtil.isStringValNullOrEmpty(size) && status === VALID)) {
-            s = {"$sort": {"__status_order": -1, "__size_order": 1}};
+            s = {"$sort": {status: -1, __size_order: 1}};
+        } else if (!serviceUtil.isStringValNullOrEmpty(status) && serviceUtil.isStringValNullOrEmpty(size) && status === OCCUPIED) {
+            m = {"$match": {$and: [{status: status}, {location_id: new mongoose.Types.ObjectId(location_id)}]}};
+            s = {"$sort": {__size_order: 1}};
+        } else if (serviceUtil.isStringValNullOrEmpty(status) && !serviceUtil.isStringValNullOrEmpty(size)) {
+            s = {"$sort": {status: -1}};
+            m = {"$match": {$and: [{size: size}, {location_id: new mongoose.Types.ObjectId(location_id)}]}};
+        } else {
+            m = {"$match": {$and: [{status: status}, {size: size}, {location_id: new mongoose.Types.ObjectId(location_id)}]}};
+            return await Locker.aggregate([m, add_size]);
         }
-        else if(!serviceUtil.isStringValNullOrEmpty(status) && serviceUtil.isStringValNullOrEmpty(size) && status === OCCUPIED){
-            m = {"$match": {$and: [{"status": status}, {"size": {"$in": ENUM_SIZE}}]}};
-            s = {"$sort": {"__size_order": 1}};
-        }
-        else if(serviceUtil.isStringValNullOrEmpty(status) && !serviceUtil.isStringValNullOrEmpty(size)){
-            s = {"$sort": {"__status_order": -1}};
-            m = {"$match": {$and: [{"status": {"$in": ENUM_STATUS}}, {"size": size}]}};
-        }
-        else{
-            m = {"$match": {$and: [{"status": status}, {"size": size}]}};
-            s = {"$sort": {"__status_order": -1, "__size_order": 1}};
-        }
-        result = await Locker.aggregate([m, add_status, add_size, s]);
-        console.log(result);
-
-        return result;
+        return await Locker.aggregate([m, add_size, s]);
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
