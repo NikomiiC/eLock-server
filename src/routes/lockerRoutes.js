@@ -43,6 +43,9 @@ router.get('/lockers/by_location_id/:id', async (req, res) => {
     const location_id = req.params.id;
     const status = req.query.status;
     const size = req.query.size;
+    if(location_id === undefined){
+        return res.status(422).send(resResult(1, `Please pass location id, location_id = ${location_id}`));
+    }
     try {
         const lockers = await lockerController.getLockersByLocationId(location_id, status, size);
         res.send(resResult(0, 'Successfully get lockers', lockers));
@@ -97,7 +100,7 @@ router.post('/create_lockers', async (req, res) => {
     }
 });
 
-router.post('locker/update_status/:id', async (req, res) => {
+router.post('/locker/update_status/:id', async (req, res) => {
 
     const id = req.params.id;
     const params = req.body;
@@ -118,7 +121,7 @@ router.post('locker/update_status/:id', async (req, res) => {
 
 });
 
-router.post('locker/update_location/:id', async (req, res) => {
+router.post('/locker/update_location/:id', async (req, res) => {
 
     const id = req.params.id;
     const params = req.body;
