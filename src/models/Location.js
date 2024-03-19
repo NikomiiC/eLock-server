@@ -36,7 +36,7 @@ const locationSchema = new mongoose.Schema({
         }
     },
     locker_list : [
-        { type: mongoose.Schema.Types.ObjectId, ref: 'Locker' }
+        { type: mongoose.Schema.Types.ObjectId, ref: 'Locker', unique: true }
     ]
 })
 locationSchema.plugin(mongoose_fuzzy_searching, { fields: ['formatted_address'] });

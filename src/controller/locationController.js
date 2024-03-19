@@ -68,15 +68,17 @@ async function getLocationsByLonLat(lon, lat) {
 async function addLockers(location_id, lockerList) {
     try {
         //check if lockers has been linked with other location
+        //check if locker is occupied
         const locatedLockers = await lockerController.getLocatedLockersByIds(lockerList);
-        if (locatedLockers === undefined || locatedLockers.length === 0) {
+        const occupiedLockers = await lockerController.getOccupiedLockersByIds(lockerList);
+        if ((locatedLockers === undefined || locatedLockers.length === 0) && (occupiedLockers === undefined || occupiedLockers.length === 0)) {
             return await Location.findOneAndUpdate(
                 {_id: location_id},
                 {$push: {locker_list: {$each: lockerList}}},//{$each: lockerList}
                 {returnOriginal: false}
             );
         } else {
-            sendError(`Lockers has been assigned to a location, ${locatedLockers}`);
+            sendError(`Lockers has been assigned to a location or in use, locatedLockers: ${locatedLockers}, occupiedLockers : ${occupiedLockers}`);
         }
 
     } catch (err) {

@@ -17,6 +17,8 @@ router.use(requireAuth); // require user to sign in first
  */
 const USER = 'u';
 const ADMIN = 'admin';
+const VALID = 'Valid';
+const OCCUPIED = 'Occupied';
 
 /**
  * Method GET
@@ -123,14 +125,26 @@ router.post('/locker/update_status/:id', async (req, res) => {
 
 router.post('/locker/update_location/:id', async (req, res) => {
 
-    const id = req.params.id;
+    const id = req.params.id; //locker id
     const params = req.body;
 
+    /**
+     * check locker status, update only when status is valid
+     * remove locker from original location
+     * add locker to new location
+     * update location id of locker object
+     */
     try {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
+            const locker = await lockerController.getLockerById(id);
+            if(locker.status !== VALID){
+                return res.status(422).send(resResult(1, "Failed to update location id, locker is occupied currently"));
+            }
+            await locationController.removeLockersById(locker.location_id,[id]);
+            await locationController.addLockers(locker.location_id, [id]);
             await lockerController.updateLocationByIds(params.location_id, [id]);
-            const new_locker = lockerController.getLockerById(id);
+            const new_locker = await lockerController.getLockerById(id);
             res.send(resResult(0, `Successfully update location id `, new_locker));
         } else {
             return res.status(422).send(resResult(1, "User has no permission to update location."));
