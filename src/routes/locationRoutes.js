@@ -280,7 +280,7 @@ router.delete('/delete_location/:id', async (req, res) => {
                 const occupiedLockers = await lockerController.getOccupiedLockersByIds(location.locker_list);
                 if(occupiedLockers.length === 0){
                     //update transaction locker id to removed, try first not sure if can assign string to _id
-                    await transactionController.updateRemovedLockersIdToNull(location.locker_list);
+                    await transactionController.updateRemovedLockersIdToEmpty(location.locker_list);
                     await lockerController.deleteLockersByIds(location.locker_list);
                     await locationController.deleteLocationById(location_id);
                 }

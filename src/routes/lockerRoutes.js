@@ -46,12 +46,12 @@ router.get('/lockers/by_location_id/:id', async (req, res) => {
     const location_id = req.params.id;
     const status = req.query.status;
     const size = req.query.size;
-    if(location_id === undefined){
+    if (location_id === undefined) {
         return res.status(422).send(resResult(1, `Please pass location id, location_id = ${location_id}`));
     }
     try {
         const lockers = await lockerController.getLockersByLocationId(location_id, status, size);
-        if(lockers.length === 0){
+        if (lockers.length === 0) {
             res.send(resResult(0, 'No match lockers found', lockers));
         }
         res.send(resResult(0, 'Successfully get lockers', lockers));
@@ -142,10 +142,10 @@ router.post('/locker/update_location/:id', async (req, res) => {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
             const locker = await lockerController.getLockerById(id);
-            if(locker.status !== VALID){
+            if (locker.status !== VALID) {
                 return res.status(422).send(resResult(1, "Failed to update location id, locker is occupied currently"));
             }
-            await locationController.removeLockersById(locker.location_id,[id]);
+            await locationController.removeLockersById(locker.location_id, [id]);
             await locationController.addLockers(params.location_id, [id], UPDATE_LOCATION_ID);
             await lockerController.updateLocationByIds(params.location_id, [id]);
             const new_locker = await lockerController.getLockerById(id);
@@ -158,24 +158,22 @@ router.post('/locker/update_location/:id', async (req, res) => {
     }
 
 });
-
-/**
- * Method: DELETE
- */
-router.delete('/delete_locker', async (req, res) => {
+router.post('/delete_locker', async (req, res) => {
     const params = req.body;
     const locker_id_list = params.locker_list;
+    const location_id = params.location_id;
 // role check
     try {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
             const occupiedLockers = await lockerController.getOccupiedLockersByIds(locker_id_list);
             if (occupiedLockers.length === 0) {
-                //update transaction locker id to removed, try first not sure if can assign string to _id
-                await transactionController.updateRemovedLockersIdToNull(location.locker_list);
-                await lockerController.deleteLockersByIds(location.locker_list);
+                //update transaction locker id to removed
+                await transactionController.updateRemovedLockersIdToEmpty(locker_id_list);
+                await locationController.removeLockersById(location_id,locker_id_list);
+                await lockerController.deleteLockersByIds(locker_id_list);
             } else {
-                return res.status(422).send(resResult(1, `Failed to delete, lockers in use`));
+                return res.status(422).send(resResult(1, `Failed to delete, lockers in use, occupiedLockers: `, occupiedLockers));
             }
             res.send(resResult(0, `Successfully delete lockers ${locker_id_list}`));
         } else {

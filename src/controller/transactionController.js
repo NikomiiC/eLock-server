@@ -11,7 +11,7 @@ const BOOKED = 'Booked';
 const ONGOING = 'Ongoing';
 const REMOVED = 'Removed';
 
-async function updateRemovedLockersIdToNull(locker_id_list) {
+async function updateRemovedLockersIdToEmpty(locker_id_list) {
     try {
         //todo: haven't test till this part, so far no transaction
         return await Transaction.findOneAndUpdate(
@@ -26,5 +26,5 @@ async function updateRemovedLockersIdToNull(locker_id_list) {
 }
 
 module.exports = {
-    updateRemovedLockersIdToNull
+    updateRemovedLockersIdToEmpty
 }
