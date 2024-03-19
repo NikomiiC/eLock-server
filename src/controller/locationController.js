@@ -6,7 +6,9 @@ const lockerController = require('./lockerController');
 //note: test date
 //let currentDate = new Date('2024-03-01T14:51:06.157Z');
 
-let currentDate = new Date();
+
+const UPDATE_LOCATION_ID = 'UPDATE_LOCATION_ID';
+const ADD_LOCKERS_TO_LOCATION = 'ADD_LOCKERS_TO_LOCATION';
 
 async function getAllLocations() {
     try {
@@ -65,21 +67,36 @@ async function getLocationsByLonLat(lon, lat) {
     }
 }
 
-async function addLockers(location_id, lockerList) {
+async function addLockers(location_id, lockerList, passInFuncName) {
     try {
         //check if lockers has been linked with other location
         //check if locker is occupied
         const locatedLockers = await lockerController.getLocatedLockersByIds(lockerList);
         const occupiedLockers = await lockerController.getOccupiedLockersByIds(lockerList);
-        if ((locatedLockers === undefined || locatedLockers.length === 0) && (occupiedLockers === undefined || occupiedLockers.length === 0)) {
-            return await Location.findOneAndUpdate(
-                {_id: location_id},
-                {$push: {locker_list: {$each: lockerList}}},//{$each: lockerList}
-                {returnOriginal: false}
-            );
-        } else {
-            sendError(`Lockers has been assigned to a location or in use, locatedLockers: ${locatedLockers}, occupiedLockers : ${occupiedLockers}`);
+        if(passInFuncName === ADD_LOCKERS_TO_LOCATION){
+            if ((locatedLockers === undefined || locatedLockers.length === 0) && (occupiedLockers === undefined || occupiedLockers.length === 0)) {
+                return await Location.findOneAndUpdate(
+                    {_id: location_id},
+                    {$push: {locker_list: {$each: lockerList}}},//{$each: lockerList}
+                    {returnOriginal: false}
+                );
+            } else {
+                sendError(`Lockers has been assigned to a location or in use, locatedLockers: ${locatedLockers}, occupiedLockers : ${occupiedLockers}`);
+            }
         }
+        else{ //UPDATE_LOCATION_ID
+            if (occupiedLockers === undefined || occupiedLockers.length === 0) {
+                return await Location.findOneAndUpdate(
+                    {_id: location_id},
+                    {$push: {locker_list: {$each: lockerList}}},//{$each: lockerList}
+                    {returnOriginal: false}
+                );
+            } else {
+                sendError(`Lockers in use, occupiedLockers : ${occupiedLockers}`);
+            }
+        }
+
+
 
     } catch (err) {
         console.log(err.message);

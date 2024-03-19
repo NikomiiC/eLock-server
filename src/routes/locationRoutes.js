@@ -19,7 +19,7 @@ router.use(requireAuth); // require user to sign in first
 const LOC_SIZE = 2;
 const USER = 'u';
 const ADMIN = 'admin';
-
+const ADD_LOCKERS_TO_LOCATION = 'ADD_LOCKERS_TO_LOCATION';
 /**
  * Method: GET
  */
@@ -166,7 +166,7 @@ router.post('/update_location/add_lockers/:id', async (req, res) => {
     try {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
-            let new_location = await locationController.addLockers(location_id, params.locker_list);
+            let new_location = await locationController.addLockers(location_id, params.locker_list, ADD_LOCKERS_TO_LOCATION);
             //update locker's location id
             await lockerController.updateLocationByIds(location_id, params.locker_list);
             res.send(resResult(0, `Successfully add lockers to location ${location_id}`, new_location));

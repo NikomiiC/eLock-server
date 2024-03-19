@@ -19,6 +19,7 @@ const USER = 'u';
 const ADMIN = 'admin';
 const VALID = 'Valid';
 const OCCUPIED = 'Occupied';
+const UPDATE_LOCATION_ID = 'UPDATE_LOCATION_ID';
 
 /**
  * Method GET
@@ -142,7 +143,7 @@ router.post('/locker/update_location/:id', async (req, res) => {
                 return res.status(422).send(resResult(1, "Failed to update location id, locker is occupied currently"));
             }
             await locationController.removeLockersById(locker.location_id,[id]);
-            await locationController.addLockers(locker.location_id, [id]);
+            await locationController.addLockers(params.location_id, [id], UPDATE_LOCATION_ID);
             await lockerController.updateLocationByIds(params.location_id, [id]);
             const new_locker = await lockerController.getLockerById(id);
             res.send(resResult(0, `Successfully update location id `, new_locker));
