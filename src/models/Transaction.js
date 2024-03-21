@@ -27,7 +27,7 @@ const transactionSchema = new mongoose.Schema({
     },
     feedback_list: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Feedback', unique: true
+        ref: 'Feedback'
     }],
     cost: {
         type: Number,

@@ -34,7 +34,15 @@ async function updateFeedbackList(uid, fid) {
     }
 }
 
+async function getUserByEmail(email) {
+    try {
+        return await User.findOne({email: email});
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
 
 module.exports = {
-    getRole, updateFeedbackList
+    getRole, updateFeedbackList, getUserByEmail
 }

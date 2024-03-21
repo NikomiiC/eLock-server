@@ -32,11 +32,11 @@ const userSchema = new mongoose.Schema({
     },
     feedback_list: [{
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'Feedback', unique: true
+            ref: 'Feedback'
     }],
     trn_list: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Transaction', unique: true
+        ref: 'Transaction'
     }],
 });
 
