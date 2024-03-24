@@ -103,7 +103,6 @@ router.delete('/delete_pricing/:id', async (req, res) => {
     try {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
-            //todo: To implement below functions in controller
             // check if any Uncompleted transaction
             const uncompletedTransaction = await transactionController.getUncompletedTransactionByPricingId(pricing_id);
             if (uncompletedTransaction.length === 0) {
