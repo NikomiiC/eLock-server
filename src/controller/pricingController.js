@@ -45,9 +45,20 @@ async function updatePricing(pricing_id, doc) {
     }
 }
 
+async function deletePricingById(pricing_id){
+    try {
+        return await Pricing.deleteOne(
+            {_id: pricing_id}
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
 module.exports = {
     getAllPricing,
     getPricingById,
     insertPricing,
-    updatePricing
+    updatePricing,
+    deletePricingById
 }
