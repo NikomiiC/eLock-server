@@ -11,7 +11,7 @@ const pricingSchema = new mongoose.Schema({
      * follow_up_l
      */
     name:{
-        type: String,
+        type: String, // 'Small', 'Medium','Large'
         required: true,
         unique: true
     },
@@ -27,30 +27,6 @@ const pricingSchema = new mongoose.Schema({
         type: Number,
         required: true
     }
-    // first_hour_s: {
-    //     type: Number,
-    //     required: true
-    // },
-    // first_hour_m: {
-    //     type: Number,
-    //     required: true
-    // },
-    // first_hour_l: {
-    //     type: Number,
-    //     required: true
-    // },
-    // follow_up_s: {
-    //     type: Number,
-    //     required: true
-    // },
-    // follow_up_m: {
-    //     type: Number,
-    //     required: true
-    // },
-    // follow_up_l: {
-    //     type: Number,
-    //     required: true
-    // }
 })
 
 mongoose.model('Pricing', pricingSchema)

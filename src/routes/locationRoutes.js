@@ -58,12 +58,12 @@ router.get('/location/:id', async (req, res) => {
  * try later
  */
 
-router.get('/location/addressName/:addressName', async(req, res) =>{
+router.get('/location/addressName/:addressName', async (req, res) => {
     const addressName = req.params.addressName;
-    try{
+    try {
         const location = await locationController.getLocationsByAddressName(addressName);
         res.send(resResult(0, 'Successfully get locations', location));
-    }catch (err){
+    } catch (err) {
         return res.status(422).send(resResult(1, `Fail to get locations ` + err.message));
     }
 });
@@ -94,10 +94,9 @@ router.get('/locations/:lon/:lat', async (req, res) => {
 
     try {
         const locations = await locationController.getLocationsByLonLat(lon, lat);
-        if(locations.length !== 0){
+        if (locations.length !== 0) {
             res.send(resResult(0, 'Successfully get locations', locations));
-        }
-        else{
+        } else {
             res.send(resResult(0, 'No near locations found', locations));
         }
     } catch (err) {
@@ -132,7 +131,7 @@ router.post('/create_location', async (req, res) => {
             }
             try {
                 //check if duplicate postcode
-                if(await locationController.isDuplicatePostcode(postcode)){
+                if (await locationController.isDuplicatePostcode(postcode)) {
                     return res
                         .status(422)
                         .send(resResult(1, `Add failed, postcode: ${postcode} already exist`));
@@ -237,14 +236,13 @@ router.post('/update_location/remove_lockers/:id', async (req, res) => {
                 //check if lockers occupied
                 const occupiedLockers = await lockerController.getOccupiedLockersByIds(location.locker_list);
 
-                if(occupiedLockers.length === 0){
+                if (occupiedLockers.length === 0) {
                     //pull from locker_list
                     const new_location = await locationController.removeLockersById(location_id, locker_list);
                     //remove location_id from locker
                     await lockerController.removeLocationByIds(params.locker_list);
                     res.send(resResult(0, `Successfully remove lockers from location ${location_id}`, new_location));
-                }
-                else{
+                } else {
                     return res.status(422).send(resResult(1, `Remove lockers failed, lockers are occupied`));
                 }
             } catch (err) {
@@ -273,24 +271,21 @@ router.delete('/delete_location/:id', async (req, res) => {
     try {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
-
-            try {
-                const location = await locationController.getLocationById(location_id);
-                //check if lockers occupied
-                const occupiedLockers = await lockerController.getOccupiedLockersByIds(location.locker_list);
-                if(occupiedLockers.length === 0){
-                    //update transaction locker id to removed, try first not sure if can assign string to _id
-                    await transactionController.updateRemovedLockersIdToEmpty(location.locker_list);
-                    await lockerController.deleteLockersByIds(location.locker_list);
-                    await locationController.deleteLocationById(location_id);
-                }
-                else{
-                    return res.status(422).send(resResult(1, `Location ${location_id} has lockers in use, cannot delete this location.`));
-                }
-                res.send(resResult(0, `Successfully delete the location ${location_id}`));
-            } catch (err) {
-                return res.status(422).send(resResult(1, err.message));
+            const location = await locationController.getLocationById(location_id);
+            //check if lockers occupied
+            const occupiedLockers = await lockerController.getOccupiedLockersByIds(location.locker_list);
+            if (occupiedLockers.length === 0) {
+                //update transaction locker id to removed, try first not sure if can assign string to _id
+                await transactionController.updateRemovedLockersIdToEmpty(location.locker_list);
+                await lockerController.deleteLockersByIds(location.locker_list);
+                await locationController.deleteLocationById(location_id);
+            } else {
+                return res.status(422).send(resResult(1, `Location ${location_id} has lockers in use, cannot delete this location.`));
             }
+            res.send(resResult(0, `Successfully delete the location ${location_id}`));
+
+        } else {
+            return res.status(422).send(resResult(1, "User has no permission to delete location."));
         }
 
     } catch (err) {

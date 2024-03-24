@@ -20,6 +20,11 @@ const transactionSchema = new mongoose.Schema({
         ref: 'Locker',
         required: true
     },
+    pricing_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Pricing',
+        required: true
+    },
     status: {
         type: String,
         enum: ['Booked', 'Ongoing', 'Completed'],
