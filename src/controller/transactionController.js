@@ -37,7 +37,7 @@ async function getUncompletedTransactionByPricingId(pricing_id) {
 }
 
 async function removePricingId(pricing_id) {
-    try{
+    try {
         return await Transaction.updateMany(
             {pricing_id: pricing_id},
             {pricing_id: ""},
@@ -48,8 +48,30 @@ async function removePricingId(pricing_id) {
     }
 }
 
+async function getAllTransactions() {
+    try{
+        return await Transaction.find();
+    }catch(err){
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function getAllUserTransactions(user_id){
+    try{
+        return await Transaction.find(
+            {user_id: user_id}
+        );
+    }catch(err){
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     updateRemovedLockersIdToEmpty,
     getUncompletedTransactionByPricingId,
-    removePricingId
+    removePricingId,
+    getAllTransactions,
+    getAllUserTransactions
 }

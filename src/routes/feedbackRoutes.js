@@ -129,6 +129,7 @@ router.post('/create_feedback', async (req, res) => {
         await feedback.save();
         try{
             await userController.updateFeedbackList(req.user._id, feedback._id);
+            //todo: add feedback id to transaction
             return res.send(resResult(0, `Successfully create a new feedback `, feedback));
         }catch (err){
             return res.status(422).send(resResult(1, err.message));
