@@ -10,30 +10,47 @@ const pricingSchema = new mongoose.Schema({
      * follow_up_m
      * follow_up_l
      */
-    first_hour_s: {
+    name:{
+        type: String,
+        required: true,
+        unique: true
+    },
+    description:{
+        type: String,
+        required: true
+    },
+    first_hour:{
         type: Number,
         required: true
     },
-    first_hour_m: {
-        type: Number,
-        required: true
-    },
-    first_hour_l: {
-        type: Number,
-        required: true
-    },
-    follow_up_s: {
-        type: Number,
-        required: true
-    },
-    follow_up_m: {
-        type: Number,
-        required: true
-    },
-    follow_up_l: {
+    follow_up:{
         type: Number,
         required: true
     }
+    // first_hour_s: {
+    //     type: Number,
+    //     required: true
+    // },
+    // first_hour_m: {
+    //     type: Number,
+    //     required: true
+    // },
+    // first_hour_l: {
+    //     type: Number,
+    //     required: true
+    // },
+    // follow_up_s: {
+    //     type: Number,
+    //     required: true
+    // },
+    // follow_up_m: {
+    //     type: Number,
+    //     required: true
+    // },
+    // follow_up_l: {
+    //     type: Number,
+    //     required: true
+    // }
 })
 
 mongoose.model('Pricing', pricingSchema)
