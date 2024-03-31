@@ -21,6 +21,11 @@ const feedbackSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    transaction_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Transaction',
+        required: true
+    },
     status: {
         type: String,
         enum: ['Open', 'Closed'],

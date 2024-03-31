@@ -22,7 +22,7 @@ const COMPLETED = 'Completed';
  * Method: GET
  */
 
-router.get('/all_transaction', async (req, res) => {
+router.get('/all_transactions', async (req, res) => {
     //admin only
     try {
         const role = await userController.getRole(req);

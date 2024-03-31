@@ -4,6 +4,7 @@ const requireAuth = require('../middlewares/requireAuth');
 const {resResult, sendError} = require('../util/constants');
 const feedbackController = require("../controller/feedbackController");
 const userController = require("../controller/userController");
+const transactionController = require("../controller/transactionController");
 const Feedback = mongoose.model('Feedback');
 const router = express.Router();
 router.use(requireAuth); // require user to sign in first
@@ -100,6 +101,7 @@ router.post('/create_feedback', async (req, res) => {
     const params = req.body;
     const ticketList = params.ticketList;
     const feedback_header = params.feedback_header;
+    const trn_id = params.transaction_id; // if not passing transaction_id means this feedback does not relate to any transaction
     const current_datetime = new Date();
     console.log(current_datetime)
 
@@ -120,6 +122,7 @@ router.post('/create_feedback', async (req, res) => {
             {
                 feedback_header: params.feedback_header,
                 user_id: req.user._id,
+                transaction_id: trn_id,
                 ticketList: params.ticketList,
                 latest_update_datetime : current_datetime,
                 create_datetime : current_datetime
@@ -128,8 +131,12 @@ router.post('/create_feedback', async (req, res) => {
         // add commentsList
         await feedback.save();
         try{
+            //todo: add feedback id to transaction, test
+            if(trn_id !== undefined){
+                await transactionController.updateFeedbackId(trn_id, feedback._id);
+            }
             await userController.updateFeedbackList(req.user._id, feedback._id);
-            //todo: add feedback id to transaction
+
             return res.send(resResult(0, `Successfully create a new feedback `, feedback));
         }catch (err){
             return res.status(422).send(resResult(1, err.message));
@@ -226,7 +233,6 @@ router.post('/update_feedback/edit_ticket/:id', async (req, res) => {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
             const new_feedback = await Feedback.findOneAndUpdate(
-                //todo: not sure the query need double check, the set not very sure, i scared will set all object to reply_body
                 {_id: feedback_id, ticketList: {$elemMatch: {reply_body: undefined}}},
                 {
                     latest_update_datetime : current_datetime,

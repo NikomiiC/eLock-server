@@ -25,6 +25,10 @@ const lockerSchema = new mongoose.Schema({
     trn_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Transaction'
+    },
+    passcode:{
+        type: String,
+        default: '000000'
     }
 })
 

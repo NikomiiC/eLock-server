@@ -49,20 +49,40 @@ async function removePricingId(pricing_id) {
 }
 
 async function getAllTransactions() {
-    try{
+    try {
         return await Transaction.find();
-    }catch(err){
+    } catch (err) {
         console.log(err.message);
         sendError(err.message);
     }
 }
 
-async function getAllUserTransactions(user_id){
-    try{
+async function getAllUserTransactions(user_id) {
+    try {
         return await Transaction.find(
             {user_id: user_id}
         );
-    }catch(err){
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function updateFeedbackId(trn_id, feedback_id) {
+    try {
+        const transaction = await Transaction.findById(trn_id);
+        if (!transaction) {
+            sendError('Transaction is invalid.');
+        }
+        await Transaction.updateOne(
+            {'_id': trn_id},
+            {
+                "$push": {
+                    "feedback_list": feedback_id
+                }
+            },
+        );
+    } catch (err) {
         console.log(err.message);
         sendError(err.message);
     }
@@ -73,5 +93,6 @@ module.exports = {
     getUncompletedTransactionByPricingId,
     removePricingId,
     getAllTransactions,
-    getAllUserTransactions
+    getAllUserTransactions,
+    updateFeedbackId
 }

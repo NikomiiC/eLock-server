@@ -44,7 +44,6 @@ router.get('/location/:id', async (req, res) => {
     }
 });
 
-//todo:
 /**
  * 1. fuzzy search by formatted_address. Front end Google API call, send backend with the formatted_address. Backend fuzzy search with the formatted address. Implement after other locations CRUD complete
  * or
