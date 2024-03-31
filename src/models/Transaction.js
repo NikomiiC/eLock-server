@@ -46,6 +46,12 @@ const transactionSchema = new mongoose.Schema({
     latest_update_datetime: {
         type: Date
     },
+    start_datetime: {
+        type: Date
+    },
+    end_datetime: {
+        type: Date
+    }
 })
 
 mongoose.model('Transaction', transactionSchema)
