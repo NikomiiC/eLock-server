@@ -121,11 +121,55 @@ async function updateFeedbackId(trn_id, feedback_id) {
     }
 }
 
+async function createTransaction(doc) {
+    try {
+        const currentDatetime = new Date();
+        const transaction = new Transaction(
+            {
+                user_id : doc.user_id,
+                locker_id: doc.locker_id,
+                pricing_id: doc.pricing_id,
+                cost: doc.cost,
+                create_datetime: currentDatetime,
+                latest_update_datetime: currentDatetime,
+                start_datetime: doc.start_datetime,
+                end_datetime: doc.end_datetime
+            }
+        );
+        await transaction.save();
+        return transaction;
+
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function isLessThanTwoBookToday(uid) {
+    const previousDay = new Date();
+    previousDay.setDate(previousDay.getDate() - 1);
+    try {
+        // 2 book per day
+        const trns = await Transaction.find(
+            {
+                user_id: uid,
+                create_datetime: {gte: previousDay}
+            }
+        );
+        return (trns.length < 2);
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     updateRemovedLockersIdToEmpty,
     getUncompletedTransactionByPricingId,
     removePricingId,
     getAllTransactions,
     getAllUserTransactions,
-    updateFeedbackId
+    updateFeedbackId,
+    createTransaction,
+    isLessThanTwoBookToday
 }

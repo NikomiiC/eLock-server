@@ -5,6 +5,8 @@ const {resResult, sendError} = require('../util/constants');
 const transactionController = require("../controller/transactionController");
 const pricingController = require("../controller/pricingController");
 const userController = require("../controller/userController");
+const serviceUtil = require("../controller/serviceController");
+const lockerController = require("../controller/lockerController");
 const Transaction = mongoose.model('Transaction');
 const router = express.Router();
 router.use(requireAuth); // require user to sign in first
@@ -66,6 +68,26 @@ router.get('/user_all_transaction', async (req, res) => {
  * Method: POST
  */
 
+router.post('/create_transaction', async (req, res) => {
+
+    const params = req.body;
+    try {
+        // 2 book per day + set locker passcode
+        const validToBook = await transactionController.isLessThanTwoBookToday(params.user_id);
+        if(validToBook){
+            const transaction = await transactionController.createTransaction(params);
+            // todo: set locker passcode
+            await lockerController.setPasscode(params.passcode, params.locker_id);
+            res.send(resResult(0, `Successfully create transaction`, transaction));
+        }
+        else{
+            return res.status(422).send(resResult(1, "User has hit maximum 2 booking today."));
+        }
+
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
 
 
 module.exports = router;

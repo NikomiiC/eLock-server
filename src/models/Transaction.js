@@ -47,10 +47,12 @@ const transactionSchema = new mongoose.Schema({
         type: Date
     },
     start_datetime: {
-        type: Date
+        type: Date,
+        required: true
     },
     end_datetime: {
-        type: Date
+        type: Date,
+        required: true
     }
 })
 
