@@ -170,7 +170,7 @@ router.post('/delete_locker', async (req, res) => {
             if (occupiedLockers.length === 0) {
                 //update transaction locker id to removed
                 await transactionController.updateRemovedLockersIdToEmpty(locker_id_list);
-                await locationController.removeLockersById(location_id,locker_id_list);
+                await locationController.removeLockersById(location_id, locker_id_list);
                 await lockerController.deleteLockersByIds(locker_id_list);
             } else {
                 return res.status(422).send(resResult(1, `Failed to delete, lockers in use, occupiedLockers: `, occupiedLockers));
@@ -185,5 +185,19 @@ router.post('/delete_locker', async (req, res) => {
     }
 });
 
+router.post('/locker/update_passcode/:id', async (req, res) => {
 
+    const id = req.params.id;
+    const passcode = req.body.passcode;
+
+    try {
+        const new_locker = await lockerController.setPasscode(passcode, id);
+        res.send(resResult(0, `Successfully update status `, new_locker));
+    } catch
+        (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+
+})
+;
 module.exports = router;

@@ -180,9 +180,10 @@ async function getLockersByLocationId(location_id, status, size) {
 
 async function setPasscode(passcode, locker_id) {
     try {
-        await Locker.findOneAndUpdate(
+        return await Locker.findOneAndUpdate(
             {_id: locker_id},
-            {passcode: passcode}
+            {passcode: passcode},
+            {returnOriginal: false}
         );
 
     } catch (err) {
