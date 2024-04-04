@@ -7,7 +7,7 @@ const {sendError} = require('../util/constants');
 let currentDate = new Date();
 
 async function getFeedbacksSortByDescDates(user_id) {
-    if(user_id === undefined){ //admin
+    if (user_id === undefined) { //admin
         try {
             return await Feedback.find().sort({latest_update_datetime: -1});
             //return await Feedback.find().sort({user_com_datetime: -1});
@@ -16,8 +16,7 @@ async function getFeedbacksSortByDescDates(user_id) {
             console.log(err.message);
             sendError(err.message);
         }
-    }
-    else{ // user
+    } else { // user
         try {
             return await Feedback.find({user_id: user_id}).sort({latest_update_datetime: -1});
             //return await Feedback.find().sort({user_com_datetime: -1});
@@ -31,7 +30,7 @@ async function getFeedbacksSortByDescDates(user_id) {
 }
 
 async function getFeedbacksSortByAscDates(user_id) {
-    if(user_id === undefined){ //admin
+    if (user_id === undefined) { //admin
         try {
             return await Feedback.find().sort({latest_update_datetime: 1});
             //return await Feedback.find().sort({user_com_datetime: -1});
@@ -40,8 +39,7 @@ async function getFeedbacksSortByAscDates(user_id) {
             console.log(err.message);
             sendError(err.message);
         }
-    }
-    else{ //user
+    } else { //user
         try {
             return await Feedback.find({user_id: user_id}).sort({latest_update_datetime: 1});
             //return await Feedback.find().sort({user_com_datetime: -1});
@@ -108,10 +106,9 @@ async function getFeedbackById(id) {
 async function updateStatus(feedback_id, status) {
     const feedback = await getFeedbackById(feedback_id);
     let new_feedback;
-    if(!feedback){
+    if (!feedback) {
         sendError('Update status fail, invalid feedback');
-    }
-    else{
+    } else {
         try {
             new_feedback = await Feedback.findOneAndUpdate({_id: feedback_id}, {
                 status: status,
@@ -126,6 +123,17 @@ async function updateStatus(feedback_id, status) {
     }
 }
 
+async function removeTransaction(trn_id) {
+    try{
+        return await Feedback.updateMany(
+            {transaction_id: trn_id},
+            {transaction_id : ""}
+        );
+    }catch (err) {
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     getFeedbacksSortByDescDates,
     getFeedbacksSortByAscDates,
@@ -133,5 +141,6 @@ module.exports = {
     getFeedbacksSortByStatusAndDescDates,
     getFeedbacksSortByStatusAndAscDates,
     getFeedbackById,
-    updateStatus
+    updateStatus,
+    removeTransaction
 }

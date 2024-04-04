@@ -74,13 +74,12 @@ router.post('/create_transaction', async (req, res) => {
     try {
         // 2 book per day + set locker passcode
         const validToBook = await transactionController.isLessThanTwoBookToday(params.user_id);
-        if(validToBook){
+        if (validToBook) {
             const transaction = await transactionController.createTransaction(params);
-            // todo: set locker passcode
+            // todo: set locker passcode, i dont do encrypt to keep it simple
             await lockerController.setPasscode(params.passcode, params.locker_id);
             res.send(resResult(0, `Successfully create transaction`, transaction));
-        }
-        else{
+        } else {
             return res.status(422).send(resResult(1, "User has hit maximum 2 booking today."));
         }
 
@@ -89,5 +88,18 @@ router.post('/create_transaction', async (req, res) => {
     }
 });
 
+router.post('/update_transaction/:id', async (req, res) => {
+    const trn_id = req.params.id;
+    const params = req.body;
+    const action = params.action;
+    const doc = params.doc;
+    //action: modify, cancel
+    try {
+        const transaction = await transactionController.updateTransaction(action, doc, trn_id);
+        res.send(resResult(0, `Successfully update transaction`, transaction));
 
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
 module.exports = router;

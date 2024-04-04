@@ -177,6 +177,7 @@ async function getLockersByLocationId(location_id, status, size) {
         sendError(err.message);
     }
 }
+
 async function setPasscode(passcode, locker_id) {
     try {
         await Locker.findOneAndUpdate(
@@ -184,6 +185,18 @@ async function setPasscode(passcode, locker_id) {
             {passcode: passcode}
         );
 
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function removeTransactionId(trn_id) {
+    try {
+        return await Locker.updateMany(
+            {transaction_id: trn_id},
+            {transaction_id : ""}
+        );
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -202,5 +215,6 @@ module.exports = {
     getLockerById,
     getLockersByLocationId,
     getLockerByTransactionId,
-    setPasscode
+    setPasscode,
+    removeTransactionId
 }

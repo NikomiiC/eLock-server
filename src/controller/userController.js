@@ -43,6 +43,19 @@ async function getUserByEmail(email) {
     }
 }
 
+async function removeTransactionId(user_id, trn_id) {
+    try {
+        return await User.updateOne(
+            {_id: user_id},
+            {"$pull": {trn_list : trn_id}}
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
-    getRole, updateFeedbackList, getUserByEmail
+    getRole, updateFeedbackList, getUserByEmail,
+    removeTransactionId
 }

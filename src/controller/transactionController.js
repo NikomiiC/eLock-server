@@ -1,7 +1,10 @@
 const mongoose = require("mongoose");
 const Transaction = mongoose.model('Locker');
 const {sendError} = require('../util/constants');
-const serviceUtil = require("../controller/serviceController");
+const serviceUtil = require("./serviceController");
+const feedbackController = require("./feedbackController");
+const lockerController = require("./lockerController");
+const userController = require("./userController");
 
 /**
  * CONSTANTS
@@ -10,6 +13,9 @@ const COMPLETED = 'Completed';
 const BOOKED = 'Booked';
 const ONGOING = 'Ongoing';
 const REMOVED = 'Removed';
+const MODIFY = 'MODIFY';
+const CANCEL = 'CANCEL';
+const VALID = 'Valid';
 
 async function updateRemovedLockersIdToEmpty(locker_id_list) {
     try {
@@ -126,7 +132,7 @@ async function createTransaction(doc) {
         const currentDatetime = new Date();
         const transaction = new Transaction(
             {
-                user_id : doc.user_id,
+                user_id: doc.user_id,
                 locker_id: doc.locker_id,
                 pricing_id: doc.pricing_id,
                 cost: doc.cost,
@@ -163,6 +169,65 @@ async function isLessThanTwoBookToday(uid) {
     }
 }
 
+async function updateTransaction(action, doc, trn_id) {
+    //action: modify, cancel, chg_ps, ALL CAPS
+    try {
+        switch (action) {
+            case MODIFY:
+                if (isFieldsEmpty(doc)) {
+                    sendError(`Missing fields, transaction = ${doc}`);
+                } else {
+                    //able to update
+                    return await Transaction.findOneAndUpdate(
+                        {_id: trn_id},
+                        doc,
+                        {returnOriginal: false}
+                    );
+                }
+                break;
+            case CANCEL:
+                //delete transaction
+                await Transaction.deleteOne({_id: trn_id});
+                //delete trn_id in feedback if any
+                await feedbackController.removeTransaction(trn_id);
+                //remove trn_id in locker if any, and update locker status to valid
+                await lockerController.removeTransactionId(trn_id);
+                await lockerController.updateStatus(doc.loc, VALID);
+                //remove trn_id in user
+                await userController.removeTransactionId(doc.user_id, trn_id);
+                return;
+            default:
+                sendError("No action matched.");
+                break;
+        }
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+function isFieldsEmpty(doc) {
+    const user_id = doc.user_id;
+    const locker_id = doc.locker_id;
+    const pricing_id = doc.pricing_id;
+    const status = doc.status;
+    const cost = doc.cost;
+    const create_datetime = doc.create_datetime;
+    const latest_update_datetime = doc.latest_update_datetime;
+    const start_datetime = doc.start_datetime;
+    const end_datetime = doc.end_datetime;
+
+    return (serviceUtil.isStringValNullOrEmpty(user_id) ||
+        serviceUtil.isStringValNullOrEmpty(locker_id) ||
+        serviceUtil.isStringValNullOrEmpty(pricing_id) ||
+        serviceUtil.isStringValNullOrEmpty(status) ||
+        serviceUtil.isStringValNullOrEmpty(cost) ||
+        serviceUtil.isStringValNullOrEmpty(create_datetime) ||
+        serviceUtil.isStringValNullOrEmpty(latest_update_datetime) ||
+        serviceUtil.isStringValNullOrEmpty(start_datetime) ||
+        serviceUtil.isStringValNullOrEmpty(end_datetime));
+}
+
 module.exports = {
     updateRemovedLockersIdToEmpty,
     getUncompletedTransactionByPricingId,
@@ -171,5 +236,6 @@ module.exports = {
     getAllUserTransactions,
     updateFeedbackId,
     createTransaction,
-    isLessThanTwoBookToday
+    isLessThanTwoBookToday,
+    updateTransaction
 }
