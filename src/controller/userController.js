@@ -47,8 +47,20 @@ async function removeTransactionId(user_id, trn_id) {
     try {
         return await User.updateOne(
             {_id: user_id},
-            {"$pull": {trn_list : trn_id}}
+            {"$pull": {trn_list: trn_id}}
         );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function updateTransactionId(user_id, trn_id) {
+    try {
+        return await User.updateOne(
+            {_id: user_id},
+            {"$push" : {trn_list: trn_id}}
+        )
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -57,5 +69,6 @@ async function removeTransactionId(user_id, trn_id) {
 
 module.exports = {
     getRole, updateFeedbackList, getUserByEmail,
-    removeTransactionId
+    removeTransactionId,
+    updateTransactionId
 }

@@ -16,6 +16,7 @@ const REMOVED = 'Removed';
 const MODIFY = 'MODIFY';
 const CANCEL = 'CANCEL';
 const VALID = 'Valid';
+const OCCUPIED = 'Occupied';
 
 async function updateRemovedLockersIdToEmpty(locker_id_list) {
     try {
@@ -130,6 +131,11 @@ async function updateFeedbackId(trn_id, feedback_id) {
 async function createTransaction(doc) {
     try {
         const currentDatetime = new Date();
+        //check if any trn with same locker_id overlap with start time and end time
+        const overlapTrnLength = await getOverlapTransaction(doc.locker_id, doc.start_datetime, doc.end_datetime);
+        if(overlapTrnLength !== 0){
+            sendError("Locker is occupied in current slot.");
+        }
         const transaction = new Transaction(
             {
                 user_id: doc.user_id,
@@ -143,12 +149,29 @@ async function createTransaction(doc) {
             }
         );
         await transaction.save();
+        //update trn to user
+        await userController.updateTransactionId(doc.user_id, transaction._id);
+        //update
         return transaction;
 
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
     }
+}
+
+async function getOverlapTransaction(locker_id, start_datetime, end_datetime) {
+    /**
+     * s' < E && E' > s
+     */
+    const overlapTransactions = await Transaction.find(
+        {
+            locker_id: locker_id,
+            start_datetime: {"$lt": end_datetime},
+            end_datetime: {"$gt": start_datetime}
+        }
+    );
+    return overlapTransactions.length;
 }
 
 async function isLessThanTwoBookToday(uid) {
@@ -178,6 +201,20 @@ async function updateTransaction(action, doc, trn_id) {
                     sendError(`Missing fields, transaction = ${doc}`);
                 } else {
                     //able to update
+                    // check if changed locker_id
+                    const old_trn = await Transaction.findById(trn_id);
+                    if (old_trn.locker_id !== doc.locker_id) {
+                        //check availability of new locker
+                        const new_locker = lockerController.getLockerById(doc.locker_id);
+                        if (new_locker.status !== VALID) {
+                            sendError("Failed to update, locker is occupied");
+                        } else {
+                            //release old locker
+                            await lockerController.updateStatus(old_trn.locker_id, VALID);
+                            //set new locker
+                            await lockerController.updateStatus(doc.locker_id, OCCUPIED);
+                        }
+                    }
                     return await Transaction.findOneAndUpdate(
                         {_id: trn_id},
                         doc,

@@ -50,6 +50,7 @@ router.get('/lockers/by_location_id/:id', async (req, res) => {
         return res.status(422).send(resResult(1, `Please pass location id, location_id = ${location_id}`));
     }
     try {
+        //when call this endpoints run update trn status by current date time.
         const lockers = await lockerController.getLockersByLocationId(location_id, status, size);
         if (lockers.length === 0) {
             res.send(resResult(0, 'No match lockers found', lockers));
