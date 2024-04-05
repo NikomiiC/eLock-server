@@ -196,8 +196,37 @@ async function removeTransactionId(trn_id) {
     try {
         return await Locker.updateMany(
             {transaction_id: trn_id},
-            {transaction_id : ""}
+            {transaction_id: ""}
         );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function updateLockersStatusAndTrn(lockerList, status) {
+    // list of below
+    // {
+    //   "_id": {
+    //     "$oid": "65f940684a467c8af8802b67"
+    //   },
+    //   "locker_id": {
+    //     "$oid": "65f2a247f04502db5d4eb44c"
+    //   }
+    // }
+
+    try {
+        let bulk_ops_arr = [];
+        for (let ele of lockerList) {
+            let update_op = {
+                updateOne: {
+                    "filter": {_id: ele.locker_id},
+                    "update": {trn_id: ele._id, status : status}
+                }
+            }
+            bulk_ops_arr.push(update_op);
+        }
+        await Locker.bulkWrite(bulk_ops_arr);
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -217,5 +246,6 @@ module.exports = {
     getLockersByLocationId,
     getLockerByTransactionId,
     setPasscode,
-    removeTransactionId
+    removeTransactionId,
+    updateLockersStatusAndTrn
 }

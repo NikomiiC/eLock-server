@@ -17,6 +17,7 @@ const MODIFY = 'MODIFY';
 const CANCEL = 'CANCEL';
 const VALID = 'Valid';
 const OCCUPIED = 'Occupied';
+const RELEASE = 'RELEASE';
 
 async function updateRemovedLockersIdToEmpty(locker_id_list) {
     try {
@@ -167,8 +168,10 @@ async function getOverlapTransaction(locker_id, start_datetime, end_datetime) {
     const overlapTransactions = await Transaction.find(
         {
             locker_id: locker_id,
-            start_datetime: {"$lt": end_datetime},
-            end_datetime: {"$gt": start_datetime}
+            $or: [
+                {status: ONGOING},
+                {$and: [{start_datetime: {"$lt": end_datetime}}, {end_datetime: {"$gt": start_datetime}}]}
+            ]
         }
     );
     return overlapTransactions.length;
@@ -193,7 +196,7 @@ async function isLessThanTwoBookToday(uid) {
 }
 
 async function updateTransaction(action, doc, trn_id) {
-    //action: modify, cancel, chg_ps, ALL CAPS
+    //action: modify, cancel, release ALL CAPS
     try {
         switch (action) {
             case MODIFY:
@@ -229,10 +232,20 @@ async function updateTransaction(action, doc, trn_id) {
                 await feedbackController.removeTransaction(trn_id);
                 //remove trn_id in locker if any, and update locker status to valid
                 await lockerController.removeTransactionId(trn_id);
-                await lockerController.updateStatus(doc.loc, VALID);
+                await lockerController.updateStatus(doc.locker_id, VALID);
                 //remove trn_id in user
                 await userController.removeTransactionId(doc.user_id, trn_id);
                 return;
+
+            case RELEASE:
+                //release locker
+                await lockerController.updateStatus(doc.locker_id, VALID);
+                await lockerController.removeTransactionId(trn_id);
+                return await Transaction.findOneAndUpdate(
+                    {_id: trn_id},
+                    {status: COMPLETED},
+                    {returnOriginal: false}
+                );
             default:
                 sendError("No action matched.");
                 break;
@@ -276,6 +289,18 @@ async function updateTransactionByCurrentDatetime() {
             },
             {status: ONGOING}
         );
+        const ongoingLockerList = await Transaction.find({status: ONGOING}, {_id: 1, locker_id: 1});
+        // list of below
+        // {
+        //   "_id": {
+        //     "$oid": "65f940684a467c8af8802b67"
+        //   },
+        //   "locker_id": {
+        //     "$oid": "65f2a247f04502db5d4eb44c"
+        //   }
+        // }
+        // update locker status and trn_id
+        await lockerController.updateLockersStatusAndTrn(ongoingLockerList, OCCUPIED);
         // no auto release, only front end send release request then change status, use updateTransaction to release
     } catch (err) {
         console.log(err.message);
