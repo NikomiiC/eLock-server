@@ -26,6 +26,8 @@ const UPDATE_LOCATION_ID = 'UPDATE_LOCATION_ID';
  */
 router.get('/all_lockers', async (req, res) => {
     try {
+        //when call this endpoints run update trn status by current date time.
+        await transactionController.updateTransactionByCurrentDatetime();
         const lockers = await lockerController.getAllLockers();
         res.send(resResult(0, 'Successfully get all lockers', lockers));
     } catch (err) {
@@ -51,6 +53,7 @@ router.get('/lockers/by_location_id/:id', async (req, res) => {
     }
     try {
         //when call this endpoints run update trn status by current date time.
+        await transactionController.updateTransactionByCurrentDatetime();
         const lockers = await lockerController.getLockersByLocationId(location_id, status, size);
         if (lockers.length === 0) {
             res.send(resResult(0, 'No match lockers found', lockers));

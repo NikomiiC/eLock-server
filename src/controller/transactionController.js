@@ -133,7 +133,7 @@ async function createTransaction(doc) {
         const currentDatetime = new Date();
         //check if any trn with same locker_id overlap with start time and end time
         const overlapTrnLength = await getOverlapTransaction(doc.locker_id, doc.start_datetime, doc.end_datetime);
-        if(overlapTrnLength !== 0){
+        if (overlapTrnLength !== 0) {
             sendError("Locker is occupied in current slot.");
         }
         const transaction = new Transaction(
@@ -265,6 +265,24 @@ function isFieldsEmpty(doc) {
         serviceUtil.isStringValNullOrEmpty(end_datetime));
 }
 
+async function updateTransactionByCurrentDatetime() {
+    // if current date time >= start time  && <= end time, status change to Ongoing
+    const currentDateTime = new Date();
+    try {
+        await Transaction.updateMany(
+            {
+                start_datetime: {"$lte": currentDateTime},
+                end_datetime: {"$gte": currentDateTime}
+            },
+            {status: ONGOING}
+        );
+        // no auto release, only front end send release request then change status, use updateTransaction to release
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     updateRemovedLockersIdToEmpty,
     getUncompletedTransactionByPricingId,
@@ -274,5 +292,6 @@ module.exports = {
     updateFeedbackId,
     createTransaction,
     isLessThanTwoBookToday,
-    updateTransaction
+    updateTransaction,
+    updateTransactionByCurrentDatetime
 }
