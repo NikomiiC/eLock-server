@@ -76,9 +76,19 @@ async function getAllUsers() {
     }
 }
 
+async function getUserById(user_id) {
+    try {
+        return await User.findById(user_id);
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     getRole, updateFeedbackList, getUserByEmail,
     removeTransactionId,
     updateTransactionId,
-    getAllUsers
+    getAllUsers,
+    getUserById
 }

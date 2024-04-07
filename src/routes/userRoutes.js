@@ -34,4 +34,23 @@ router.get('/all_users', async (req, res) => {
     }
 });
 
+router.get('/user/:id', async (req, res) => {
+    try {
+        const user_id = req.params.id;
+        const role = await userController.getRole(req);
+        if (role === ADMIN) {
+            //default by asc username
+            const user = await userController.getUserById(user_id);
+            res.send(resResult(0, `Successfully get user`, user));
+        }
+        else{
+            const user = await userController.getUserById(req.user._id);
+            res.send(resResult(0, `Successfully get user`, user));
+        }
+    } catch (err) {
+        return res.status(422).send(resResult(1, `Fail to get user ` + err.message));
+    }
+});
+
+
 module.exports = router;
