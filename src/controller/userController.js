@@ -2,6 +2,14 @@ const mongoose = require("mongoose");
 const User = mongoose.model('User');
 const {sendError} = require("../util/constants");
 const {add} = require("nodemon/lib/rules"); //note: forget what use, keep it first
+const serviceUtil = require("./serviceController");
+
+/**
+ * CONSTANTS
+ */
+
+const CHG_PW = 'CHG_PW';
+const UPDATE = 'UPDATE';
 
 async function getRole(req) {
     let user;
@@ -85,10 +93,62 @@ async function getUserById(user_id) {
     }
 }
 
+async function updateUser(params, uid) {
+    try {
+        //action: chg_pw, update ALL CAPS
+        const action = params.action;
+        const doc = params.doc;
+        const old_password = doc.old_password;
+        const new_password = doc.new_password
+        const username = doc.username;
+        const gender = doc.gender;
+        const dob = doc.dob;
+        let updated_user;
+
+        switch (action) {
+            case CHG_PW:
+                if (serviceUtil.isStringValNullOrEmpty(old_password) || serviceUtil.isStringValNullOrEmpty(new_password)) {
+                    sendError("Must provide old password and new password");
+                }
+                const user = User.findById(uid);
+                await user.comparePassword(old_password);
+                updated_user = await User.findOneAndUpdate(
+                    {_id: uid},
+                    {password: new_password},
+                    {returnOriginal: false}
+                );
+                break;
+            case UPDATE:
+                if (serviceUtil.isStringValNullOrEmpty(username) ||
+                    serviceUtil.isStringValNullOrEmpty(gender) ||
+                    serviceUtil.isStringValNullOrEmpty(dob)) {
+                    updated_user = await User.findOneAndUpdate(
+                        {_id: uid},
+                        {
+                            username: username,
+                            gender: gender,
+                            dob: dob
+                        },
+                        {returnOriginal: false}
+                    )
+                }
+                break;
+            default:
+                sendError("No action matched.");
+                break;
+        }
+        return updated_user;
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 module.exports = {
     getRole, updateFeedbackList, getUserByEmail,
     removeTransactionId,
     updateTransactionId,
     getAllUsers,
-    getUserById
+    getUserById,
+    updateUser
 }
