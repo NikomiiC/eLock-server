@@ -8,6 +8,7 @@ const serviceUtil = require("../controller/serviceController");
 const feedbackController = require("../controller/feedbackController");
 const locationController = require("../controller/locationController");
 const transactionController = require("../controller/transactionController");
+const slotsController = require("../controller/slotsController");
 const Locker = mongoose.model('Locker');
 const router = express.Router();
 router.use(requireAuth); // require user to sign in first
@@ -38,7 +39,8 @@ router.get('/all_lockers', async (req, res) => {
 router.get('/locker/:id', async (req, res) => {
     try {
         const locker = await lockerController.getLockerById(req.params.id);
-        res.send(resResult(0, 'Successfully get locker', locker));
+        const slots = await slotsController.getSlotsByLockerId(req.params.id);
+        res.send(resResult(0, 'Successfully get locker', {locker, slots}));
     } catch (err) {
         return res.status(422).send(resResult(1, `Fail to get locker ` + err.message));
     }

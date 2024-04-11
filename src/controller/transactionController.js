@@ -348,8 +348,8 @@ async function updateTransactionByCurrentDatetime() {
     try {
         await Transaction.updateMany(
             {
-                start_datetime: {"$lte": currentDateTime},
-                end_datetime: {"$gte": currentDateTime}
+                start_date: {"$lte": currentDateTime},
+                end_date: {"$gte": currentDateTime}
             },
             {status: ONGOING}
         );
