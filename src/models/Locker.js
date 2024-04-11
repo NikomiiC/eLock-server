@@ -36,12 +36,20 @@ const lockerSchema = new mongoose.Schema({
             latest_update_datetime: {
                 type: Date
             },
-            start_datetime: {
+            start_date: {
                 type: Date,
                 required: true
             },
-            end_datetime: {
+            end_date: {
                 type: Date,
+                required: true
+            },
+            start_index:{
+                type: Number,
+                required: true
+            },
+            end_index: {
+                type: Number,
                 required: true
             }
         }

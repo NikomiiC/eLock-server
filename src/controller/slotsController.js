@@ -40,7 +40,7 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                 }
                 const slot = new Slots(
                     {
-                        recordDate: start_date,
+                        recordDate: setTimeToZero(start_date),
                         locker_id: locker_id,
                         slots: slotsArr
                     }
@@ -55,7 +55,7 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                         }
                         const slot = new Slots(
                             {
-                                recordDate: start_date,
+                                recordDate: setTimeToZero(computeDate),
                                 locker_id: locker_id,
                                 slots: slotsArr
                             }
@@ -67,7 +67,7 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                         }
                         const slot = new Slots(
                             {
-                                recordDate: start_date,
+                                recordDate: setTimeToZero(computeDate),
                                 locker_id: locker_id,
                                 slots: slotsArr
                             }
@@ -77,7 +77,7 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                         slotsArr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
                         const slot = new Slots(
                             {
-                                recordDate: start_date,
+                                recordDate: setTimeToZero(computeDate),
                                 locker_id: locker_id,
                                 slots: slotsArr
                             }
@@ -116,7 +116,7 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                     slotsArr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
                     const slot = new Slots(
                         {
-                            recordDate: start_date,
+                            recordDate: setTimeToZero(computeDate),
                             locker_id: locker_id,
                             slots: slotsArr
                         }
@@ -141,6 +141,12 @@ async function getSlotsByLockerId(locker_id) {
         console.log(err.message);
         sendError(err.message);
     }
+}
+
+function setTimeToZero(date){
+    let result = new Date(date);
+    result.setHours(0,0,0,0);
+    return result;
 }
 
 module.exports = {

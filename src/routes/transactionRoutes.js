@@ -78,6 +78,7 @@ router.post('/create_transaction', async (req, res) => {
             const transaction = await transactionController.createTransaction(params);
             // todo: set locker passcode, i dont do encrypt to keep it simple
             await lockerController.setPasscode(params.passcode, params.locker_id);
+            await lockerController.updateTransaction(params.locker_id, transaction);
             res.send(resResult(0, `Successfully create transaction`, transaction));
         } else {
             return res.status(422).send(resResult(1, "User has hit maximum 2 booking today."));

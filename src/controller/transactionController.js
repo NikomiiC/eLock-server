@@ -273,6 +273,7 @@ async function updateTransaction(action, doc, trn_id) {
                     if (old_trn.locker_id !== doc.locker_id) {
                         //check availability of new locker
                         const new_locker = lockerController.getLockerById(doc.locker_id);
+                        //check slots for new locker id in sdate,edate,sindex,eindex
                         if (new_locker.status !== VALID) {
                             sendError("Failed to update, locker is occupied");
                         } else {
