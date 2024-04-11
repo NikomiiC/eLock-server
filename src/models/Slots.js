@@ -6,12 +6,13 @@ const slotsSchema = new mongoose.Schema({
      * Date
      * Slots
      */
-    RecordDate:{
+    recordDate:{
         type: Date
     },
     slots:[{
         type: Number,
-        validate: [arrayLimit, '{PATH} must be 24']
+        validate: [arrayLimit, '{PATH} must be 24'],
+        default:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     }],
     locker_id: {
         type: mongoose.Schema.Types.ObjectId,

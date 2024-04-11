@@ -5,6 +5,8 @@ const serviceUtil = require("./serviceController");
 const feedbackController = require("./feedbackController");
 const lockerController = require("./lockerController");
 const userController = require("./userController");
+const slotsController = require("./slotsController");
+const moment = require('moment');
 
 /**
  * CONSTANTS
@@ -19,6 +21,7 @@ const VALID = 'Valid';
 const OCCUPIED = 'Occupied';
 const RELEASE = 'RELEASE';
 
+let slot;
 async function updateRemovedLockersIdToEmpty(locker_id_list) {
     try {
         //todo: haven't test till this part, so far no transaction
@@ -133,8 +136,8 @@ async function createTransaction(doc) {
     try {
         const currentDatetime = new Date();
         //check if any trn with same locker_id with same slots using
-        const overlapTrnLength = await getOverlapTransaction(doc.locker_id, doc.start_datetime, doc.end_datetime);
-        if (overlapTrnLength !== 0) {
+        const overlapTrnLength = await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
+        if (overlapTrnLength) {
             sendError("Locker is occupied in current slot.");
         }
         const transaction = new Transaction(
@@ -145,11 +148,15 @@ async function createTransaction(doc) {
                 cost: doc.cost,
                 create_datetime: currentDatetime,
                 latest_update_datetime: currentDatetime,
-                start_datetime: doc.start_datetime,
-                end_datetime: doc.end_datetime
+                start_index: doc.start_index,
+                end_index: doc.end_index,
+                start_date: doc.start_date,
+                end_date: doc.end_date
             }
         );
         await transaction.save();
+        //update slots
+        await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
         //update trn to user
         await userController.updateTransactionId(doc.user_id, transaction._id);
         //update
@@ -161,20 +168,77 @@ async function createTransaction(doc) {
     }
 }
 
-async function getOverlapTransaction(locker_id, start_datetime, end_datetime) {
+async function getOverlapTransaction(locker_id, start_index, end_index, start_date, end_date) {
     /**
-     * s' < E && E' > s
+     * check slots, query by date
      */
-    const overlapTransactions = await Transaction.find(
-        {
-            locker_id: locker_id,
-            $or: [
-                {status: ONGOING},
-                {$and: [{start_datetime: {"$lt": end_datetime}}, {end_datetime: {"$gt": start_datetime}}]}
-            ]
+        // if start_date and end_date are same date
+    const sdate = new Date(start_date.split('T')[0]);
+    const edate = new Date(end_date.split('T')[0]);
+    let result = false;
+    try {
+        slot = await slotsController.getSlotsByDate(start_date, end_date, locker_id);
+        if (slot.length === 0) {
+            //no overlap can just add
+            return result;
         }
-    );
-    return overlapTransactions.length;
+        if (slot.length === 1) {
+            // start date = end date
+            //check slot
+            for (let i = start_index; i <= end_index; i++) {
+                if (slot.slots[i] === 1) {
+                    result = true;
+                    break;
+                }
+            }
+        } else {
+            //end_date not same date as start_date, slots sort by recordDate asc
+            let innerResult = false;
+            for (let s of slot) {
+                if (new Date(s.recordDate.split('T')[0]).getTime() === sdate.getTime()) {
+                    for (let i = start_index; i <= 24; i++) {
+                        if (slot.slots[i] === 1) {
+                            innerResult = true;
+                            break;
+                        }
+                    }
+                } else if (new Date(s.recordDate.split('T')[0]).getTime() === edate.getTime()) {
+                    for (let i = 0; i <= end_index; i++) {
+                        if (slot.slots[i] === 1) {
+                            innerResult = true;
+                            break;
+                        }
+                    }
+                } else {
+                    for (let i = 0; i <= 24; i++) {
+                        if (slot.slots[i] === 1) {
+                            innerResult = true;
+                            break;
+                        }
+                    }
+                }
+                if (innerResult === true) {
+                    result = true;
+                    break;
+                }
+            }
+
+        }
+        return result;
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+    // const overlapTransactions = await Transaction.find(
+    //     {
+    //         locker_id: locker_id,
+    //         $or: [
+    //             {status: ONGOING},
+    //             {$and: [{start_datetime: {"$lt": end_datetime}}, {end_datetime: {"$gt": start_datetime}}]}
+    //         ]
+    //     }
+    // );
+    // return overlapTransactions.length;
 }
 
 async function isLessThanTwoBookToday(uid) {
@@ -264,8 +328,8 @@ function isFieldsEmpty(doc) {
     const cost = doc.cost;
     const create_datetime = doc.create_datetime;
     const latest_update_datetime = doc.latest_update_datetime;
-    const start_datetime = doc.start_datetime;
-    const end_datetime = doc.end_datetime;
+    const start_date = doc.start_date;
+    const end_date = doc.end_date;
 
     return (serviceUtil.isStringValNullOrEmpty(user_id) ||
         serviceUtil.isStringValNullOrEmpty(locker_id) ||
@@ -274,8 +338,8 @@ function isFieldsEmpty(doc) {
         serviceUtil.isStringValNullOrEmpty(cost) ||
         serviceUtil.isStringValNullOrEmpty(create_datetime) ||
         serviceUtil.isStringValNullOrEmpty(latest_update_datetime) ||
-        serviceUtil.isStringValNullOrEmpty(start_datetime) ||
-        serviceUtil.isStringValNullOrEmpty(end_datetime));
+        serviceUtil.isStringValNullOrEmpty(start_date) ||
+        serviceUtil.isStringValNullOrEmpty(end_date));
 }
 
 async function updateTransactionByCurrentDatetime() {
