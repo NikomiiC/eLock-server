@@ -143,14 +143,78 @@ async function getSlotsByLockerId(locker_id) {
     }
 }
 
-function setTimeToZero(date){
+function setTimeToZero(date) {
     let result = new Date(date);
-    result.setHours(0,0,0,0);
+    result.setHours(0, 0, 0, 0);
     return result;
+}
+
+async function unsetSlot(locker_id, start_date, end_date, start_index, end_index, slot) {
+    const sdate = new Date(start_date.split('T')[0]);
+    const sdatePlusOne = new Date(start_date.split('T')[0]) + 1;
+    const edate = new Date(start_date.split('T')[0]);
+    const edatePlusOne = new Date(end_date.split('T')[0]) + 1;
+    let computeDate = sdate;
+
+    try {
+        let slotsArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        if (slot.length === 1) {
+            //sdate = edate
+            slotsArr = slot.slots;
+            for (let i = start_index; i <= end_index; i++) {
+                slotsArr[i] = 0;
+            }
+            slot.slots = slotsArr;
+            await Slots.updateOne(slot);
+        } else {
+            //sdate != edate
+            for (let s of slot) {
+                if (new Date(s.recordDate.split('T')[0]).getTime() === sdate.getTime()) {
+                    slotsArr = s.slots;
+                    for (let i = start_index; i <= 24; i++) {
+                        slotsArr[i] = 0;
+                    }
+                    s.slots = slotsArr;
+                    await Slots.updateOne(s);
+                } else if (new Date(s.recordDate.split('T')[0]).getTime() === edate.getTime()) {
+                    slotsArr = s.slots;
+                    for (let i = 0; i <= end_index; i++) {
+                        slotsArr[i] = 0;
+                    }
+                    s.slots = slotsArr;
+                    await Slots.updateOne(s);
+                } else {
+                    slotsArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                    s.slots = slotsArr;
+                    await Slots.updateOne(s);
+                }
+            }
+        }
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function deletePreviousRecord() {
+    let currentDate = new Date();
+    currentDate.setHours(0,0,0,0);
+    try {
+        await Slots.deleteMany(
+            {recordDate: {
+                    "$lt": currentDate
+                }}
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
 }
 
 module.exports = {
     getSlotsByDate,
     addSlot,
-    getSlotsByLockerId
+    getSlotsByLockerId,
+    unsetSlot,
+    deletePreviousRecord
 }

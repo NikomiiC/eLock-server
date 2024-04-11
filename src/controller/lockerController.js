@@ -192,11 +192,11 @@ async function setPasscode(passcode, locker_id) {
     }
 }
 
-async function removeTransactionId(trn_id) {
+async function removeTransactionId(locker_id, trn_id) {
     try {
-        return await Locker.updateMany(
-            {transaction_id: trn_id},
-            {transaction_id: ""}
+        return await Locker.updateOne(
+            {locker_id: locker_id},
+            {"$pull": {trn_list: trn_id}}
         );
     } catch (err) {
         console.log(err.message);

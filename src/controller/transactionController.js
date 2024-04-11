@@ -22,6 +22,7 @@ const OCCUPIED = 'Occupied';
 const RELEASE = 'RELEASE';
 
 let slot;
+
 async function updateRemovedLockersIdToEmpty(locker_id_list) {
     try {
         //todo: haven't test till this part, so far no transaction
@@ -268,19 +269,18 @@ async function updateTransaction(action, doc, trn_id) {
                     sendError(`Missing fields, transaction = ${doc}`);
                 } else {
                     //able to update
-                    // check if changed locker_id
+                    // check if new locker is valid in duration
                     const old_trn = await Transaction.findById(trn_id);
                     if (old_trn.locker_id !== doc.locker_id) {
                         //check availability of new locker
-                        const new_locker = lockerController.getLockerById(doc.locker_id);
-                        //check slots for new locker id in sdate,edate,sindex,eindex
-                        if (new_locker.status !== VALID) {
+                        const isNewLockerBooked = await getOverlapTransaction(doc.locker_id, doc.start, doc.end_index, doc.start_date, doc.end_date);
+                        if (isNewLockerBooked) {
                             sendError("Failed to update, locker is occupied");
                         } else {
-                            //release old locker
-                            await lockerController.updateStatus(old_trn.locker_id, VALID);
-                            //set new locker
-                            await lockerController.updateStatus(doc.locker_id, OCCUPIED);
+                            //unset old locker slots
+                            await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start, doc.end_date, slot);
+                            //set new locker slots
+                            await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start, doc.end_date, slot);
                         }
                     }
                     return await Transaction.findOneAndUpdate(
@@ -291,13 +291,15 @@ async function updateTransaction(action, doc, trn_id) {
                 }
                 break;
             case CANCEL:
+                //unset slots
+                await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start, doc.end_date, slot);
                 //delete transaction
                 await Transaction.deleteOne({_id: trn_id});
                 //delete trn_id in feedback if any
                 await feedbackController.removeTransaction(trn_id);
                 //remove trn_id in locker if any, and update locker status to valid
-                await lockerController.removeTransactionId(trn_id);
-                await lockerController.updateStatus(doc.locker_id, VALID);
+                await lockerController.removeTransactionId(doc.locker_id, trn_id);
+                //await lockerController.updateStatus(doc.locker_id, VALID);
                 //remove trn_id in user
                 await userController.removeTransactionId(doc.user_id, trn_id);
                 return;
@@ -305,7 +307,10 @@ async function updateTransaction(action, doc, trn_id) {
             case RELEASE:
                 //release locker
                 await lockerController.updateStatus(doc.locker_id, VALID);
-                await lockerController.removeTransactionId(trn_id);
+                //unset slots
+                await getOverlapTransaction(doc.locker_id, doc.start, doc.end_index, doc.start_date, doc.end_date);
+                await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start, doc.end_date, slot);
+                await lockerController.removeTransactionId(doc.locker_id, trn_id);
                 return await Transaction.findOneAndUpdate(
                     {_id: trn_id},
                     {status: COMPLETED},
@@ -366,6 +371,7 @@ async function updateTransactionByCurrentDatetime() {
         // }
         // update locker status and trn_id
         await lockerController.updateLockersStatusAndTrn(ongoingLockerList, OCCUPIED);
+        await slotsController.deletePreviousRecord();
         // no auto release, only front end send release request then change status, use updateTransaction to release
     } catch (err) {
         console.log(err.message);
