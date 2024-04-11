@@ -8,25 +8,45 @@ const lockerSchema = new mongoose.Schema({
      * location_id
      * trn_id
      */
-    status:{
+up    status: {
         type: String,
         enum: ['Occupied', 'Valid'],
         default: 'Valid'
     },
-    size:{
+    size: {
         type: String,
-        enum: ['Small', 'Medium','Large'],
+        enum: ['Small', 'Medium', 'Large'],
         required: true
     },
     location_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Location'
     },
-    trn_id: {
+    pricing_id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Transaction'
+        ref: 'Pricing'
     },
-    passcode:{
+    trn_list: [
+        {
+            trn_id: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Transaction'
+            },
+            status: String,
+            latest_update_datetime: {
+                type: Date
+            },
+            start_datetime: {
+                type: Date,
+                required: true
+            },
+            end_datetime: {
+                type: Date,
+                required: true
+            }
+        }
+    ],
+    passcode: {
         type: String,
         default: '000000'
     }
