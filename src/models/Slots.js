@@ -11,7 +11,6 @@ const slotsSchema = new mongoose.Schema({
     },
     slots:[{
         type: Number,
-        validate: [arrayLimit, '{PATH} must be 24'],
         default:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     }],
     locker_id: {

@@ -244,8 +244,9 @@ async function updateTransaction(locker_id, trn) {
             start_index: trn.start_index,
             end_index: trn.end_index
         }
+        console.log(newTrn);
         await Locker.findOneAndUpdate(
-            {locker_id: locker_id},
+            {_id: locker_id},
             {
                 "$push":
                     {

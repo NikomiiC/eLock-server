@@ -17,6 +17,8 @@ const userRoutes = require('./routes/userRoutes');
 const feedbackRoutes = require('./routes/feedbackRoutes');
 const locationRoutes = require('./routes/locationRoutes');
 const lockerRoutes = require('./routes/lockerRoutes');
+const pricingRoutes = require('./routes/pricingRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
 
 
 const mongoUri = process.env.MONGO_URI;
@@ -34,6 +36,8 @@ app.use(userRoutes);
 app.use(feedbackRoutes);
 app.use(locationRoutes);
 app.use(lockerRoutes);
+app.use(pricingRoutes);
+app.use(transactionRoutes);
 
 // app.use(bodyParser.urlencoded({ extended: true }));
 

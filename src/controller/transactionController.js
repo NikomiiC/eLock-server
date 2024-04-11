@@ -1,12 +1,11 @@
 const mongoose = require("mongoose");
-const Transaction = mongoose.model('Locker');
+const Transaction = mongoose.model('Transaction');
 const {sendError} = require('../util/constants');
 const serviceUtil = require("./serviceController");
 const feedbackController = require("./feedbackController");
 const lockerController = require("./lockerController");
 const userController = require("./userController");
 const slotsController = require("./slotsController");
-const moment = require('moment');
 
 /**
  * CONSTANTS
@@ -144,7 +143,7 @@ async function createTransaction(doc) {
         const transaction = new Transaction(
             {
                 user_id: doc.user_id,
-                locker_id: doc.locker_id,
+                locker_id: new mongoose.Types.ObjectId(doc.locker_id),
                 pricing_id: doc.pricing_id,
                 cost: doc.cost,
                 create_datetime: currentDatetime,
@@ -155,6 +154,7 @@ async function createTransaction(doc) {
                 end_date: doc.end_date
             }
         );
+        //await Transaction.create(transaction);
         await transaction.save();
         //update slots
         await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
@@ -250,7 +250,7 @@ async function isLessThanTwoBookToday(uid) {
         const trns = await Transaction.find(
             {
                 user_id: uid,
-                create_datetime: {gte: previousDay}
+                create_datetime: {$gte: previousDay}
             }
         );
         return (trns.length < 2);

@@ -6,11 +6,15 @@ const serviceUtil = require("./serviceController");
 
 async function getSlotsByDate(start_date, end_date, locker_id) {
     const sdate = new Date(start_date.split('T')[0]);
-    const sdatePlusOne = new Date(start_date.split('T')[0]) + 1;
+    let sdatePlusOne = new Date(sdate);
+    sdatePlusOne.setDate(sdate.getDate() + 1);
     const edate = new Date(start_date.split('T')[0]);
-    const edatePlusOne = new Date(end_date.split('T')[0]) + 1;
+    let edatePlusOne = new Date(sdate);
+    edatePlusOne.setDate(edate.getDate() + 1);
 
     try {
+        const s = await Slots.find();
+        console.log(s);
         return await Slots.find({
             locker_id: locker_id,
             recordDate: {
@@ -26,10 +30,12 @@ async function getSlotsByDate(start_date, end_date, locker_id) {
 
 async function addSlot(locker_id, start_date, end_date, start_index, end_index, slot) {
     const sdate = new Date(start_date.split('T')[0]);
-    const sdatePlusOne = new Date(start_date.split('T')[0]) + 1;
+    let sdatePlusOne = new Date(sdate);
+    sdatePlusOne.setDate(sdate.getDate() + 1);
     const edate = new Date(start_date.split('T')[0]);
-    const edatePlusOne = new Date(end_date.split('T')[0]) + 1;
-    let computeDate = sdate;
+    let edatePlusOne = new Date(sdate);
+    edatePlusOne.setDate(edate.getDate() + 1);
+    let computeDate = new Date(sdate);
     try {
         let slotsArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         if (slot.length === 0) {
@@ -38,14 +44,14 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                 for (let i = start_index; i <= end_index; i++) {
                     slotsArr[i] = 1;
                 }
-                const slot = new Slots(
+                const s = new Slots(
                     {
                         recordDate: setTimeToZero(start_date),
                         locker_id: locker_id,
                         slots: slotsArr
                     }
                 );
-                await slot.save();
+                await s.save();
             } else {
                 while (computeDate.getTime() <= edate.getTime()) {
                     slotsArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
@@ -53,36 +59,36 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                         for (let i = start_index; i <= 24; i++) {
                             slotsArr[i] = 1;
                         }
-                        const slot = new Slots(
+                        const s = new Slots(
                             {
                                 recordDate: setTimeToZero(computeDate),
                                 locker_id: locker_id,
                                 slots: slotsArr
                             }
                         );
-                        await slot.save();
+                        await s.save();
                     } else if (computeDate.getTime() === edate.getTime()) {
                         for (let i = 0; i <= end_index; i++) {
                             slotsArr[i] = 1;
                         }
-                        const slot = new Slots(
+                        const s = new Slots(
                             {
                                 recordDate: setTimeToZero(computeDate),
                                 locker_id: locker_id,
                                 slots: slotsArr
                             }
                         );
-                        await slot.save();
+                        await s.save();
                     } else {
                         slotsArr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-                        const slot = new Slots(
+                        const s = new Slots(
                             {
                                 recordDate: setTimeToZero(computeDate),
                                 locker_id: locker_id,
                                 slots: slotsArr
                             }
                         );
-                        await slot.save();
+                        await s.save();
                     }
                     computeDate.setDate(computeDate.getDate() + 1);
                 }
@@ -198,12 +204,14 @@ async function unsetSlot(locker_id, start_date, end_date, start_index, end_index
 
 async function deletePreviousRecord() {
     let currentDate = new Date();
-    currentDate.setHours(0,0,0,0);
+    currentDate.setHours(0, 0, 0, 0);
     try {
         await Slots.deleteMany(
-            {recordDate: {
+            {
+                recordDate: {
                     "$lt": currentDate
-                }}
+                }
+            }
         );
     } catch (err) {
         console.log(err.message);

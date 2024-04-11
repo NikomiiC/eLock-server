@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const {sendError} = require('../util/constants');
-const {mongo} = require("mongoose");
 
 const transactionSchema = new mongoose.Schema({
     /**
