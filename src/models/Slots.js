@@ -12,7 +12,11 @@ const slotsSchema = new mongoose.Schema({
     slots:[{
         type: Number,
         validate: [arrayLimit, '{PATH} must be 24']
-    }]
+    }],
+    locker_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Locker'
+    },
 })
 
 function arrayLimit(val){

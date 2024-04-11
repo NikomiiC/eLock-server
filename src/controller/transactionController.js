@@ -132,7 +132,7 @@ async function updateFeedbackId(trn_id, feedback_id) {
 async function createTransaction(doc) {
     try {
         const currentDatetime = new Date();
-        //check if any trn with same locker_id overlap with start time and end time
+        //check if any trn with same locker_id with same slots using
         const overlapTrnLength = await getOverlapTransaction(doc.locker_id, doc.start_datetime, doc.end_datetime);
         if (overlapTrnLength !== 0) {
             sendError("Locker is occupied in current slot.");

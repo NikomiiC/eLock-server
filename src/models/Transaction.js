@@ -46,12 +46,16 @@ const transactionSchema = new mongoose.Schema({
     latest_update_datetime: {
         type: Date
     },
-    start_datetime: {
-        type: Date,
+    start_index: { //0-23
+        type: Number,
+        min: 0,
+        max: 23,
         required: true
     },
-    end_datetime: {
-        type: Date,
+    end_index: {//1-24
+        type: Number,
+        min:1,
+        max: 24,
         required: true
     }
 })
