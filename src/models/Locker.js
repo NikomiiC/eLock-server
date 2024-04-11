@@ -8,7 +8,7 @@ const lockerSchema = new mongoose.Schema({
      * location_id
      * trn_id
      */
-up    status: {
+    status: {
         type: String,
         enum: ['Occupied', 'Valid'],
         default: 'Valid'
