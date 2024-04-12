@@ -199,11 +199,10 @@ async function getOverlapTransaction(locker_id, start_index, end_index, start_da
                 let dateIndex = new Date(sdate);
                 let innerResult = false;
                 while (dateIndex.getTime() <= edate.getTime()) {
-                    if(dateIndex.getTime() !== slotDate.getTime()){
+                    if (dateIndex.getTime() !== slotDate.getTime()) {
                         dateIndex.setDate(dateIndex.getDate() + 1);
                         continue;
-                    }
-                    else{
+                    } else {
                         if (dateIndex.getTime() === sdate.getTime()) {
                             for (let i = start_index; i <= 24; i++) {
                                 if (slot[0].slots[i] === 1) {
@@ -235,38 +234,47 @@ async function getOverlapTransaction(locker_id, start_index, end_index, start_da
                 }
             }
         } else {
-            //todo: wrong
             //end_date not same date as start_date, slots sort by recordDate asc
+            const len = slot.length;
+            let index = 0;
+            let dateIndex = new Date(sdate);
             let innerResult = false;
-            for (let s of slot) {
-                if (new Date(s.recordDate.split('T')[0]).getTime() === sdate.getTime()) {
-                    for (let i = start_index; i <= 24; i++) {
-                        if (slot.slots[i] === 1) {
-                            innerResult = true;
-                            break;
-                        }
-                    }
-                } else if (new Date(s.recordDate.split('T')[0]).getTime() === edate.getTime()) {
-                    for (let i = 0; i <= end_index; i++) {
-                        if (slot.slots[i] === 1) {
-                            innerResult = true;
-                            break;
-                        }
-                    }
+            while (dateIndex.getTime() <= edate.getTime() && index < len) {
+                if (dateIndex.getTime() !== new Date(slot[index].recordDate).getTime()) {
+                    dateIndex.setDate(dateIndex.getDate() + 1);
+                    continue;
                 } else {
-                    for (let i = 0; i <= 24; i++) {
-                        if (slot.slots[i] === 1) {
-                            innerResult = true;
-                            break;
+                    if (dateIndex.getTime() === sdate.getTime()) {
+                        for (let i = start_index; i <= 24; i++) {
+                            if (slot[index].slots[i] === 1) {
+                                innerResult = true;
+                                break;
+                            }
+                        }
+                    } else if (dateIndex.getTime() === edate.getTime()) {
+                        for (let i = 0; i <= end_index; i++) {
+                            if (slot[index].slots[i] === 1) {
+                                innerResult = true;
+                                break;
+                            }
+                        }
+                    } else {
+                        for (let i = 0; i <= 24; i++) {
+                            if (slot[index].slots[i] === 1) {
+                                innerResult = true;
+                                break;
+                            }
                         }
                     }
+                    index++;
                 }
+
                 if (innerResult === true) {
                     result = true;
                     break;
                 }
+                dateIndex.setDate(dateIndex.getDate() + 1);
             }
-
         }
         return result;
     } catch (err) {
