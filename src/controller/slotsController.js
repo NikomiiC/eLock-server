@@ -32,15 +32,17 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
     const sdate = new Date(start_date);
     let sdatePlusOne = new Date(sdate);
     sdatePlusOne.setDate(sdate.getDate() + 1);
-    const edate = new Date(start_date);
-    let edatePlusOne = new Date(sdate);
+
+    const edate = new Date(end_date);
+    let edatePlusOne = new Date(edate);
     edatePlusOne.setDate(edate.getDate() + 1);
+
     let computeDate = new Date(sdate);
     try {
         let slotsArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         if (slot.length === 0) {
             //no existing directly create
-            if (sdate.getTime() === sdate.getTime()) {
+            if (sdate.getTime() === edate.getTime()) {
                 for (let i = start_index; i <= end_index; i++) {
                     slotsArr[i] = 1;
                 }

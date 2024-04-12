@@ -141,6 +141,8 @@ async function createTransaction(doc) {
         if (overlapTrnLength) {
             sendError("Locker is occupied in current slot.");
         }
+        //update slots
+        await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
         const transaction = new Transaction(
             {
                 user_id: doc.user_id,
@@ -157,8 +159,7 @@ async function createTransaction(doc) {
         );
         //await Transaction.create(transaction);
         await transaction.save();
-        //update slots
-        await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
+
         //update trn to user
         await userController.updateTransactionId(doc.user_id, transaction._id);
         //update
