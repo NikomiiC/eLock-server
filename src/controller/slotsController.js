@@ -5,16 +5,16 @@ const {add} = require("nodemon/lib/rules"); //note: forget what use, keep it fir
 const serviceUtil = require("./serviceController");
 
 async function getSlotsByDate(start_date, end_date, locker_id) {
-    const sdate = new Date(start_date.split('T')[0]);
+
+    const sdate = new Date(start_date);
     let sdatePlusOne = new Date(sdate);
     sdatePlusOne.setDate(sdate.getDate() + 1);
-    const edate = new Date(start_date.split('T')[0]);
-    let edatePlusOne = new Date(sdate);
+
+    const edate = new Date(end_date);
+    let edatePlusOne = new Date(edate);
     edatePlusOne.setDate(edate.getDate() + 1);
 
     try {
-        const s = await Slots.find();
-        console.log(s);
         return await Slots.find({
             locker_id: locker_id,
             recordDate: {
@@ -29,10 +29,10 @@ async function getSlotsByDate(start_date, end_date, locker_id) {
 }
 
 async function addSlot(locker_id, start_date, end_date, start_index, end_index, slot) {
-    const sdate = new Date(start_date.split('T')[0]);
+    const sdate = new Date(start_date);
     let sdatePlusOne = new Date(sdate);
     sdatePlusOne.setDate(sdate.getDate() + 1);
-    const edate = new Date(start_date.split('T')[0]);
+    const edate = new Date(start_date);
     let edatePlusOne = new Date(sdate);
     edatePlusOne.setDate(edate.getDate() + 1);
     let computeDate = new Date(sdate);
@@ -156,10 +156,10 @@ function setTimeToZero(date) {
 }
 
 async function unsetSlot(locker_id, start_date, end_date, start_index, end_index, slot) {
-    const sdate = new Date(start_date.split('T')[0]);
-    const sdatePlusOne = new Date(start_date.split('T')[0]) + 1;
-    const edate = new Date(start_date.split('T')[0]);
-    const edatePlusOne = new Date(end_date.split('T')[0]) + 1;
+    const sdate = new Date(start_date);
+    const sdatePlusOne = new Date(start_date) + 1;
+    const edate = new Date(start_date);
+    const edatePlusOne = new Date(end_date) + 1;
     let computeDate = sdate;
 
     try {

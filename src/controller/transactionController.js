@@ -136,6 +136,7 @@ async function createTransaction(doc) {
     try {
         const currentDatetime = new Date();
         //check if any trn with same locker_id with same slots using
+
         const overlapTrnLength = await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
         if (overlapTrnLength) {
             sendError("Locker is occupied in current slot.");
@@ -187,7 +188,7 @@ async function getOverlapTransaction(locker_id, start_index, end_index, start_da
             // start date = end date
             //check slot
             for (let i = start_index; i <= end_index; i++) {
-                if (slot.slots[i] === 1) {
+                if (slot[0].slots[i] === 1) {
                     result = true;
                     break;
                 }
