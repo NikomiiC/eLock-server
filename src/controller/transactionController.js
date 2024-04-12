@@ -205,7 +205,7 @@ async function getOverlapTransaction(locker_id, start_index, end_index, start_da
                         continue;
                     } else {
                         if (dateIndex.getTime() === sdate.getTime()) {
-                            for (let i = start_index; i <= 24; i++) {
+                            for (let i = start_index; i <= 23; i++) {
                                 if (slot[0].slots[i] === 1) {
                                     innerResult = true;
                                     break;
@@ -219,7 +219,7 @@ async function getOverlapTransaction(locker_id, start_index, end_index, start_da
                                 }
                             }
                         } else {
-                            for (let i = 0; i <= 24; i++) {
+                            for (let i = 0; i <= 23; i++) {
                                 if (slot[0].slots[i] === 1) {
                                     innerResult = true;
                                     break;
@@ -246,7 +246,7 @@ async function getOverlapTransaction(locker_id, start_index, end_index, start_da
                     continue;
                 } else {
                     if (dateIndex.getTime() === sdate.getTime()) {
-                        for (let i = start_index; i <= 24; i++) {
+                        for (let i = start_index; i <= 23; i++) {
                             if (slot[index].slots[i] === 1) {
                                 innerResult = true;
                                 break;
@@ -260,7 +260,7 @@ async function getOverlapTransaction(locker_id, start_index, end_index, start_da
                             }
                         }
                     } else {
-                        for (let i = 0; i <= 24; i++) {
+                        for (let i = 0; i <= 23; i++) {
                             if (slot[index].slots[i] === 1) {
                                 innerResult = true;
                                 break;

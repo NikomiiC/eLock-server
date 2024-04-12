@@ -4,6 +4,9 @@ const {sendError} = require("../util/constants");
 const {add} = require("nodemon/lib/rules"); //note: forget what use, keep it first
 const serviceUtil = require("./serviceController");
 
+const unsetArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+const setArr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+
 async function getSlotsByDate(start_date, end_date, locker_id) {
 
     const sdate = new Date(start_date);
@@ -39,7 +42,7 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
 
     let computeDate = new Date(sdate);
     try {
-        let slotsArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+        let slotsArr = [...unsetArr];
         if (slot.length === 0) {
             //no existing directly create
             if (sdate.getTime() === edate.getTime()) {
@@ -56,9 +59,9 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                 await s.save();
             } else {
                 while (computeDate.getTime() <= edate.getTime()) {
-                    slotsArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+                    slotsArr = [...unsetArr];
                     if (computeDate.getTime() === sdate.getTime()) {
-                        for (let i = start_index; i <= 24; i++) {
+                        for (let i = start_index; i <= 23; i++) {
                             slotsArr[i] = 1;
                         }
                         const s = new Slots(
@@ -82,7 +85,7 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                         );
                         await s.save();
                     } else {
-                        slotsArr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+                        slotsArr = [...setArr];
                         const s = new Slots(
                             {
                                 recordDate: setTimeToZero(computeDate),
@@ -95,44 +98,69 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                     computeDate.setDate(computeDate.getDate() + 1);
                 }
             }
-        } else if (slot.length === 1) {
-            //sdate = edate
-            slotsArr = slot.slots;
-            for (let i = start_index; i <= end_index; i++) {
-                slotsArr[i] = 1;
-            }
-            slot.slots = slotsArr;
-            await Slots.updateOne(slot);
         } else {
-            //sdate != edate
-            while (computeDate.getTime() <= edate.getTime()) {
-                if (new Date(slot[0].recordDate.split('T')[0]).getTime() === sdate.getTime()) {
-                    slotsArr = slot[0].slots;
-                    for (let i = start_index; i <= 24; i++) {
-                        slotsArr[i] = 1;
-                    }
-                    slot.slots = slotsArr;
-                    await Slots.updateOne(slot[0]);
-                } else if (new Date(slot[1].recordDate.split('T')[0]).getTime() === edate.getTime()) {
-                    slotsArr = slot[1].slots;
-                    for (let i = 0; i <= end_index; i++) {
-                        slotsArr[i] = 1;
-                    }
-                    slot.slots = slotsArr;
-                    await Slots.updateOne(slot[1]);
-                } else {
-                    slotsArr = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
-                    const slot = new Slots(
-                        {
-                            recordDate: setTimeToZero(computeDate),
-                            locker_id: locker_id,
-                            slots: slotsArr
-                        }
-                    );
-                    await slot.save();
+            const len = slot.length;
+            let index = 0;
+            let dateIndex = new Date(sdate);
+            if (sdate.getTime() === edate.getTime()){
+                //slot len will be 1
+                for (let i = start_index; i <= end_index; i++) {
+                    slot[index].slots[i] = 1;
                 }
-                computeDate.setDate(computeDate.getDate() + 1);
+                await Slots.findOneAndUpdate({_id: slot[index]._id},
+                    {slots:slot[index].slots});
             }
+            else{
+                while (dateIndex.getTime() <= edate.getTime() && index < len) {
+                    if (dateIndex.getTime() !== new Date(slot[index].recordDate).getTime()) {
+                        //create
+                        if (dateIndex.getTime() === sdate.getTime()) {
+                            slotsArr = [...unsetArr];
+                            for (let i = start_index; i <= 23; i++) {
+                                slotsArr[i] = 1;
+                            }
+
+                        } else if (dateIndex.getTime() === edate.getTime()) {
+                            slotsArr = [...unsetArr];
+                            for (let i = 0; i <= end_index; i++) {
+                                slotsArr[i] = 1;
+                            }
+                        } else {
+                            slotsArr = [...setArr];
+                        }
+
+                        const s = new Slots(
+                            {
+                                recordDate: setTimeToZero(computeDate),
+                                locker_id: locker_id,
+                                slots: slotsArr
+                            }
+                        );
+                        await s.save();
+                        dateIndex.setDate(dateIndex.getDate() + 1);
+                        continue;
+                    } else {
+                        // existing slot, update
+                        if (dateIndex.getTime() === sdate.getTime()) {
+                            for (let i = start_index; i <= 23; i++) {
+                                slot[index].slots[i] = 1;
+                            }
+                        } else if (dateIndex.getTime() === edate.getTime()) {
+                            for (let i = 0; i <= end_index; i++) {
+                                slot[index].slots[i] = 1;
+                            }
+                        } else {
+                            slot[index].slots = [...setArr];
+                        }
+                        await Slots.findOneAndUpdate({_id: slot[index]._id},
+                            {slots:slot[index].slots});
+                        index++;
+                    }
+                    dateIndex.setDate(dateIndex.getDate() + 1);
+                }
+            }
+
+
         }
     } catch (err) {
         console.log(err.message);
@@ -179,7 +207,7 @@ async function unsetSlot(locker_id, start_date, end_date, start_index, end_index
             for (let s of slot) {
                 if (new Date(s.recordDate.split('T')[0]).getTime() === sdate.getTime()) {
                     slotsArr = s.slots;
-                    for (let i = start_index; i <= 24; i++) {
+                    for (let i = start_index; i <= 23; i++) {
                         slotsArr[i] = 0;
                     }
                     s.slots = slotsArr;
