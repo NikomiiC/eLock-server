@@ -175,8 +175,10 @@ async function getOverlapTransaction(locker_id, start_index, end_index, start_da
      * check slots, query by date
      */
         // if start_date and end_date are same date
-    const sdate = new Date(start_date.split('T')[0]);
-    const edate = new Date(end_date.split('T')[0]);
+    const sdate = new Date(start_date);
+    const edate = new Date(end_date);
+    sdate.setHours(0, 0, 0, 0);
+    edate.setHours(0, 0, 0, 0);
     let result = false;
     try {
         slot = await slotsController.getSlotsByDate(start_date, end_date, locker_id);
@@ -185,15 +187,55 @@ async function getOverlapTransaction(locker_id, start_index, end_index, start_da
             return result;
         }
         if (slot.length === 1) {
-            // start date = end date
-            //check slot
-            for (let i = start_index; i <= end_index; i++) {
-                if (slot[0].slots[i] === 1) {
-                    result = true;
-                    break;
+            const slotDate = new Date(slot[0].recordDate);
+            if (sdate.getTime() === edate.getTime()) {
+                for (let i = start_index; i <= end_index; i++) {
+                    if (slot[0].slots[i] === 1) {
+                        result = true;
+                        break;
+                    }
+                }
+            } else {
+                let dateIndex = new Date(sdate);
+                let innerResult = false;
+                while (dateIndex.getTime() <= edate.getTime()) {
+                    if(dateIndex.getTime() !== slotDate.getTime()){
+                        dateIndex.setDate(dateIndex.getDate() + 1);
+                        continue;
+                    }
+                    else{
+                        if (dateIndex.getTime() === sdate.getTime()) {
+                            for (let i = start_index; i <= 24; i++) {
+                                if (slot[0].slots[i] === 1) {
+                                    innerResult = true;
+                                    break;
+                                }
+                            }
+                        } else if (dateIndex.getTime() === edate.getTime()) {
+                            for (let i = 0; i <= end_index; i++) {
+                                if (slot[0].slots[i] === 1) {
+                                    innerResult = true;
+                                    break;
+                                }
+                            }
+                        } else {
+                            for (let i = 0; i <= 24; i++) {
+                                if (slot[0].slots[i] === 1) {
+                                    innerResult = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    if (innerResult === true) {
+                        result = true;
+                        break;
+                    }
+                    dateIndex.setDate(dateIndex.getDate() + 1);
                 }
             }
         } else {
+            //todo: wrong
             //end_date not same date as start_date, slots sort by recordDate asc
             let innerResult = false;
             for (let s of slot) {
