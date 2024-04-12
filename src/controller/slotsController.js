@@ -102,15 +102,14 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
             const len = slot.length;
             let index = 0;
             let dateIndex = new Date(sdate);
-            if (sdate.getTime() === edate.getTime()){
+            if (sdate.getTime() === edate.getTime()) {
                 //slot len will be 1
                 for (let i = start_index; i <= end_index; i++) {
                     slot[index].slots[i] = 1;
                 }
                 await Slots.findOneAndUpdate({_id: slot[index]._id},
-                    {slots:slot[index].slots});
-            }
-            else{
+                    {slots: slot[index].slots});
+            } else {
                 while (dateIndex.getTime() <= edate.getTime() && index < len) {
                     if (dateIndex.getTime() !== new Date(slot[index].recordDate).getTime()) {
                         //create
@@ -153,7 +152,7 @@ async function addSlot(locker_id, start_date, end_date, start_index, end_index, 
                             slot[index].slots = [...setArr];
                         }
                         await Slots.findOneAndUpdate({_id: slot[index]._id},
-                            {slots:slot[index].slots});
+                            {slots: slot[index].slots});
                         index++;
                     }
                     dateIndex.setDate(dateIndex.getDate() + 1);
@@ -187,46 +186,50 @@ function setTimeToZero(date) {
 
 async function unsetSlot(locker_id, start_date, end_date, start_index, end_index, slot) {
     const sdate = new Date(start_date);
-    const sdatePlusOne = new Date(start_date) + 1;
-    const edate = new Date(start_date);
-    const edatePlusOne = new Date(end_date) + 1;
-    let computeDate = sdate;
+    let sdatePlusOne = new Date(sdate);
+    sdatePlusOne.setDate(sdate.getDate() + 1);
 
+    const edate = new Date(end_date);
+    let edatePlusOne = new Date(edate);
+    edatePlusOne.setDate(edate.getDate() + 1);
+
+
+    let dateIndex = sdate;
+    let index = 0;
     try {
-        let slotsArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-        if (slot.length === 1) {
-            //sdate = edate
-            slotsArr = slot.slots;
-            for (let i = start_index; i <= end_index; i++) {
-                slotsArr[i] = 0;
-            }
-            slot.slots = slotsArr;
-            await Slots.updateOne(slot);
+        if (slot === undefined || slot.length === 0) {
+            sendError("Failed to cancel. Please contact support team for help.");
         } else {
-            //sdate != edate
-            for (let s of slot) {
-                if (new Date(s.recordDate.split('T')[0]).getTime() === sdate.getTime()) {
-                    slotsArr = s.slots;
-                    for (let i = start_index; i <= 23; i++) {
-                        slotsArr[i] = 0;
-                    }
-                    s.slots = slotsArr;
-                    await Slots.updateOne(s);
-                } else if (new Date(s.recordDate.split('T')[0]).getTime() === edate.getTime()) {
-                    slotsArr = s.slots;
-                    for (let i = 0; i <= end_index; i++) {
-                        slotsArr[i] = 0;
-                    }
-                    s.slots = slotsArr;
-                    await Slots.updateOne(s);
-                } else {
-                    slotsArr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-                    s.slots = slotsArr;
-                    await Slots.updateOne(s);
+            let len = slot.length;
+            if (sdate.getTime() === edate.getTime()) {
+                //slot len will be 1
+                for (let i = start_index; i <= end_index; i++) {
+                    slot[index].slots[i] = 0;
                 }
+                await Slots.findOneAndUpdate({_id: slot[index]._id},
+                    {slots: slot[index].slots});
+            } else {
+                while (dateIndex.getTime() <= edate.getTime() && index < len) {
+                    if (dateIndex.getTime() === sdate.getTime()) {
+                        for (let i = start_index; i <= 23; i++) {
+                            slot[index].slots[i] = 0;
+                        }
+                    } else if (dateIndex.getTime() === edate.getTime()) {
+                        for (let i = 0; i <= end_index; i++) {
+                            slot[index].slots[i] = 0;
+                        }
+                    } else {
+                        slot[index].slots = [...unsetArr];
+                    }
+                    await Slots.findOneAndUpdate({_id: slot[index]._id},
+                        {slots: slot[index].slots});
+                    index++;
+                }
+                dateIndex.setDate(dateIndex.getDate() + 1);
             }
         }
-    } catch (err) {
+    } catch
+        (err) {
         console.log(err.message);
         sendError(err.message);
     }

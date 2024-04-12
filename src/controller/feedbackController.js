@@ -127,7 +127,7 @@ async function removeTransaction(trn_id) {
     try{
         return await Feedback.updateMany(
             {transaction_id: trn_id},
-            {transaction_id : ""}
+            {transaction_id : null}
         );
     }catch (err) {
         sendError(err.message);

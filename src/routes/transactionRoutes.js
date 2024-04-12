@@ -76,7 +76,7 @@ router.post('/create_transaction', async (req, res) => {
         const validToBook = await transactionController.isLessThanTwoBookToday(params.user_id);
         if (validToBook) {
             const transaction = await transactionController.createTransaction(params);
-            // todo: set locker passcode, i dont do encrypt to keep it simple
+            // set locker passcode, i dont do encrypt to keep it simple
             await lockerController.setPasscode(params.passcode, params.locker_id);
             await lockerController.updateTransaction(params.locker_id, transaction);
             res.send(resResult(0, `Successfully create transaction`, transaction));
@@ -96,8 +96,9 @@ router.post('/update_transaction/:id', async (req, res) => {
     const doc = params.doc;
     //action: modify, cancel
     try {
-        const transaction = await transactionController.updateTransaction(action, doc, trn_id);
-        res.send(resResult(0, `Successfully update transaction`, transaction));
+        const role = await userController.getRole(req);
+        const transaction = await transactionController.updateTransaction(action, doc, trn_id, req.user._id, role);
+        res.send(resResult(0, `Successfully ${action} transaction`, transaction));
 
     } catch (err) {
         return res.status(422).send(resResult(1, err.message));

@@ -19,6 +19,8 @@ const CANCEL = 'CANCEL';
 const VALID = 'Valid';
 const OCCUPIED = 'Occupied';
 const RELEASE = 'RELEASE';
+const USER = 'u';
+const ADMIN = 'admin';
 
 let slot;
 
@@ -312,9 +314,13 @@ async function isLessThanTwoBookToday(uid) {
     }
 }
 
-async function updateTransaction(action, doc, trn_id) {
+async function updateTransaction(action, doc, trn_id, user_id, role) {
     //action: modify, cancel, release ALL CAPS
     try {
+        const old_trn = await Transaction.findById(trn_id);
+        if (old_trn.user_id !== user_id && role !== ADMIN) {
+            sendError("Failed to modify transaction. Role is not admin or the transaction is not belong to current user");
+        }
         switch (action) {
             case MODIFY:
                 if (isFieldsEmpty(doc)) {
@@ -322,7 +328,7 @@ async function updateTransaction(action, doc, trn_id) {
                 } else {
                     //able to update
                     // check if new locker is valid in duration
-                    const old_trn = await Transaction.findById(trn_id);
+
                     if (old_trn.locker_id !== doc.locker_id) {
                         //check availability of new locker
                         const isNewLockerBooked = await getOverlapTransaction(doc.locker_id, doc.start, doc.end_index, doc.start_date, doc.end_date);
@@ -344,17 +350,22 @@ async function updateTransaction(action, doc, trn_id) {
                 break;
             case CANCEL:
                 //unset slots
-                await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start, doc.end_date, slot);
-                //delete transaction
-                await Transaction.deleteOne({_id: trn_id});
-                //delete trn_id in feedback if any
-                await feedbackController.removeTransaction(trn_id);
-                //remove trn_id in locker if any, and update locker status to valid
-                await lockerController.removeTransactionId(doc.locker_id, trn_id);
-                //await lockerController.updateStatus(doc.locker_id, VALID);
-                //remove trn_id in user
-                await userController.removeTransactionId(doc.user_id, trn_id);
-                return;
+                //check if able to cancel
+                if (await isValidToCancel(trn_id)) {
+                    await getOverlapTransaction(doc.locker_id, doc.start, doc.end_index, doc.start_date, doc.end_date);
+                    await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
+                    //delete trn_id in feedback if any
+                    await feedbackController.removeTransaction(trn_id);
+                    //remove trn_id in locker if any, and update locker status to valid
+                    await lockerController.removeTransactionId(doc.locker_id, trn_id);
+                    //remove trn_id in user
+                    await userController.removeTransactionId(doc.user_id, trn_id);
+                    //delete transaction
+                    await Transaction.deleteOne({_id: trn_id});
+                    return;
+                } else {
+                    sendError("Failed to cancel, transaction is ongoing. Please release the locker.");
+                }
 
             case RELEASE:
                 //release locker
@@ -376,6 +387,12 @@ async function updateTransaction(action, doc, trn_id) {
         console.log(err.message);
         sendError(err.message);
     }
+}
+
+async function isValidToCancel(trn_id) {
+    const trn = await Transaction.findById(trn_id);
+    return trn.status === BOOKED;
+
 }
 
 function isFieldsEmpty(doc) {
