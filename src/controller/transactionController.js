@@ -27,11 +27,10 @@ let slot;
 async function updateRemovedLockersIdToEmpty(locker_id_list) {
     try {
         //todo: haven't test till this part, so far no transaction
-        return await Transaction.findOneAndUpdate(
-            {locker_id: {$in: locker_id_list}, status: COMPLETED},
-            {$unset: {locker_id: ""}, latest_update_datetime: new Date()},
-            {returnOriginal: false}
-        );
+        return await Transaction.findOneAndUpdate({
+            locker_id: {$in: locker_id_list},
+            status: COMPLETED
+        }, {$unset: {locker_id: ""}, latest_update_datetime: new Date()}, {returnOriginal: false});
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -40,9 +39,7 @@ async function updateRemovedLockersIdToEmpty(locker_id_list) {
 
 async function getUncompletedTransactionByPricingId(pricing_id) {
     try {
-        return await Transaction.find(
-            {pricing_id: pricing_id}
-        );
+        return await Transaction.find({pricing_id: pricing_id});
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -51,10 +48,7 @@ async function getUncompletedTransactionByPricingId(pricing_id) {
 
 async function removePricingId(pricing_id) {
     try {
-        return await Transaction.updateMany(
-            {pricing_id: pricing_id},
-            {pricing_id: ""},
-        );
+        return await Transaction.updateMany({pricing_id: pricing_id}, {pricing_id: ""},);
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -85,12 +79,10 @@ async function getAllUserTransactions(user_id, status) {
             $addFields: {
                 __status_order: {
                     $switch: {
-                        branches: [
-                            {case: {$eq: ['$status', ONGOING]}, then: 0},
-                            {case: {$eq: ['$status', BOOKED]}, then: 1},
-                            {case: {$eq: ['$status', COMPLETED]}, then: 2}
-                        ],
-                        default: 3,
+                        branches: [{case: {$eq: ['$status', ONGOING]}, then: 0}, {
+                            case: {$eq: ['$status', BOOKED]},
+                            then: 1
+                        }, {case: {$eq: ['$status', COMPLETED]}, then: 2}], default: 3,
                     },
                 }
             },
@@ -99,13 +91,9 @@ async function getAllUserTransactions(user_id, status) {
 
         if (!serviceUtil.isStringValNullOrEmpty(status)) {
             m = {"$match": {$and: [{status: status}, {user_id: new mongoose.Types.ObjectId(user_id)}]}};
-            return await Transaction.aggregate(
-                [m, add_status, s]
-            );
+            return await Transaction.aggregate([m, add_status, s]);
         } else {
-            return await Transaction.find(
-                {user_id: user_id, status: status}
-            ).sort({latest_update_datetime: -1});
+            return await Transaction.find({user_id: user_id, status: status}).sort({latest_update_datetime: -1});
         }
 
     } catch (err) {
@@ -120,14 +108,11 @@ async function updateFeedbackId(trn_id, feedback_id) {
         if (!transaction) {
             sendError('Transaction is invalid.');
         }
-        await Transaction.updateOne(
-            {'_id': trn_id},
-            {
-                "$push": {
-                    "feedback_list": feedback_id
-                }
-            },
-        );
+        await Transaction.updateOne({'_id': trn_id}, {
+            "$push": {
+                "feedback_list": feedback_id
+            }
+        },);
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -145,20 +130,18 @@ async function createTransaction(doc) {
         }
         //update slots
         await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
-        const transaction = new Transaction(
-            {
-                user_id: doc.user_id,
-                locker_id: new mongoose.Types.ObjectId(doc.locker_id),
-                pricing_id: doc.pricing_id,
-                cost: doc.cost,
-                create_datetime: currentDatetime,
-                latest_update_datetime: currentDatetime,
-                start_index: doc.start_index,
-                end_index: doc.end_index,
-                start_date: doc.start_date,
-                end_date: doc.end_date
-            }
-        );
+        const transaction = new Transaction({
+            user_id: doc.user_id,
+            locker_id: new mongoose.Types.ObjectId(doc.locker_id),
+            pricing_id: doc.pricing_id,
+            cost: doc.cost,
+            create_datetime: currentDatetime,
+            latest_update_datetime: currentDatetime,
+            start_index: doc.start_index,
+            end_index: doc.end_index,
+            start_date: doc.start_date,
+            end_date: doc.end_date
+        });
         //await Transaction.create(transaction);
         await transaction.save();
 
@@ -301,12 +284,9 @@ async function isLessThanTwoBookToday(uid) {
     previousDay.setDate(previousDay.getDate() - 1);
     try {
         // 2 book per day
-        const trns = await Transaction.find(
-            {
-                user_id: uid,
-                create_datetime: {$gte: previousDay}
-            }
-        );
+        const trns = await Transaction.find({
+            user_id: uid, create_datetime: {$gte: previousDay}
+        });
         return (trns.length < 2);
     } catch (err) {
         console.log(err.message);
@@ -318,71 +298,92 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
     //action: modify, cancel, release ALL CAPS
     try {
         const old_trn = await Transaction.findById(trn_id);
-        if (old_trn.user_id !== user_id && role !== ADMIN) {
+        if (role === ADMIN || old_trn.user_id.equals(user_id)) {
+            switch (action) {
+                case MODIFY:
+                    if (isFieldsEmpty(doc)) {
+                        sendError(`Missing fields, transaction = ${doc.toString()}`);
+                    }
+                    else if(!await isValidToCancel(trn_id)){
+                        sendError(`Failed to update, transaction is ongoing or completed.`);
+                    }
+                    else {
+                        //able to update
+                        // check if new locker is valid in duration
+                        if (!old_trn.locker_id.equals(doc.locker_id)) { // diff locker
+                            //check availability of new locker
+                            const isNewLockerBooked = await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
+                            if (isNewLockerBooked) {
+                                sendError("Locker is occupied in current slot.");
+                            } else {
+                                //unset old locker slots
+                                await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
+                                //set new locker slots
+                                await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
+                                //unset old trn and set new trn
+                                await lockerController.removeTransactionId(old_trn.locker_id, old_trn._id);
+
+                            }
+                        } else {
+                            //same locker
+                            //unset old locker slots
+                            await getOverlapTransaction(old_trn.locker_id, old_trn.start_index, old_trn.end_index, old_trn.start_date, old_trn.end_date);
+                            await slotsController.unsetSlot(doc.locker_id, old_trn.start_date, old_trn.end_date, old_trn.start_index, old_trn.end_index, slot);
+
+                            //check new slot
+                            const overlapTrnLength = await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
+                            if (overlapTrnLength) {
+                                //setback original
+                                await getOverlapTransaction(old_trn.locker_id, old_trn.start_index, old_trn.end_index, old_trn.start_date, old_trn.end_date);
+                                await slotsController.addSlot(doc.locker_id, old_trn.start_date, old_trn.end_date, old_trn.start_index, old_trn.end_index, slot);
+                                sendError("Failed to update, slot is occupied.");
+                            }
+                            //update slots
+                            const isNewLockerBooked = await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
+                            await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
+                        }
+
+                        const tran = await Transaction.findOneAndUpdate({_id: trn_id}, doc, {returnOriginal: false});
+                        await lockerController.addTransactionToLocker(doc.locker_id, tran);
+                        return tran;
+                    }
+                    break;
+                case CANCEL:
+                    //unset slots
+                    //check if able to cancel
+                    if (await isValidToCancel(trn_id)) {
+                        await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
+                        await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
+                        //delete trn_id in feedback if any
+                        await feedbackController.removeTransaction(trn_id);
+                        //remove trn_id in locker if any, and update locker status to valid
+                        await lockerController.removeTransactionId(doc.locker_id, trn_id);
+                        //remove trn_id in user
+                        await userController.removeTransactionId(doc.user_id, trn_id);
+                        //delete transaction
+                        await Transaction.deleteOne({_id: trn_id});
+                        return;
+                    } else {
+                        sendError("Failed to cancel, transaction is ongoing. Please release the locker.");
+                    }
+
+                case RELEASE:
+                    //release locker
+                    await lockerController.updateStatus(doc.locker_id, VALID);
+                    //unset slots
+                    await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
+                    await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
+                    await lockerController.removeTransactionId(doc.locker_id, trn_id);
+                    return await Transaction.findOneAndUpdate({_id: trn_id}, {status: COMPLETED}, {returnOriginal: false});
+                default:
+                    sendError("No action matched.");
+                    break;
+            }
+        } else
+        {
             sendError("Failed to modify transaction. Role is not admin or the transaction is not belong to current user");
         }
-        switch (action) {
-            case MODIFY:
-                if (isFieldsEmpty(doc)) {
-                    sendError(`Missing fields, transaction = ${doc}`);
-                } else {
-                    //able to update
-                    // check if new locker is valid in duration
 
-                    if (old_trn.locker_id !== doc.locker_id) {
-                        //check availability of new locker
-                        const isNewLockerBooked = await getOverlapTransaction(doc.locker_id, doc.start, doc.end_index, doc.start_date, doc.end_date);
-                        if (isNewLockerBooked) {
-                            sendError("Failed to update, locker is occupied");
-                        } else {
-                            //unset old locker slots
-                            await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start, doc.end_date, slot);
-                            //set new locker slots
-                            await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start, doc.end_date, slot);
-                        }
-                    }
-                    return await Transaction.findOneAndUpdate(
-                        {_id: trn_id},
-                        doc,
-                        {returnOriginal: false}
-                    );
-                }
-                break;
-            case CANCEL:
-                //unset slots
-                //check if able to cancel
-                if (await isValidToCancel(trn_id)) {
-                    await getOverlapTransaction(doc.locker_id, doc.start, doc.end_index, doc.start_date, doc.end_date);
-                    await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
-                    //delete trn_id in feedback if any
-                    await feedbackController.removeTransaction(trn_id);
-                    //remove trn_id in locker if any, and update locker status to valid
-                    await lockerController.removeTransactionId(doc.locker_id, trn_id);
-                    //remove trn_id in user
-                    await userController.removeTransactionId(doc.user_id, trn_id);
-                    //delete transaction
-                    await Transaction.deleteOne({_id: trn_id});
-                    return;
-                } else {
-                    sendError("Failed to cancel, transaction is ongoing. Please release the locker.");
-                }
-
-            case RELEASE:
-                //release locker
-                await lockerController.updateStatus(doc.locker_id, VALID);
-                //unset slots
-                await getOverlapTransaction(doc.locker_id, doc.start, doc.end_index, doc.start_date, doc.end_date);
-                await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start, doc.end_date, slot);
-                await lockerController.removeTransactionId(doc.locker_id, trn_id);
-                return await Transaction.findOneAndUpdate(
-                    {_id: trn_id},
-                    {status: COMPLETED},
-                    {returnOriginal: false}
-                );
-            default:
-                sendError("No action matched.");
-                break;
-        }
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -406,28 +407,16 @@ function isFieldsEmpty(doc) {
     const start_date = doc.start_date;
     const end_date = doc.end_date;
 
-    return (serviceUtil.isStringValNullOrEmpty(user_id) ||
-        serviceUtil.isStringValNullOrEmpty(locker_id) ||
-        serviceUtil.isStringValNullOrEmpty(pricing_id) ||
-        serviceUtil.isStringValNullOrEmpty(status) ||
-        serviceUtil.isStringValNullOrEmpty(cost) ||
-        serviceUtil.isStringValNullOrEmpty(create_datetime) ||
-        serviceUtil.isStringValNullOrEmpty(latest_update_datetime) ||
-        serviceUtil.isStringValNullOrEmpty(start_date) ||
-        serviceUtil.isStringValNullOrEmpty(end_date));
+    return (serviceUtil.isStringValNullOrEmpty(user_id) || serviceUtil.isStringValNullOrEmpty(locker_id) || serviceUtil.isStringValNullOrEmpty(pricing_id) || serviceUtil.isStringValNullOrEmpty(status) || serviceUtil.isStringValNullOrEmpty(cost) || serviceUtil.isStringValNullOrEmpty(create_datetime) || serviceUtil.isStringValNullOrEmpty(latest_update_datetime) || serviceUtil.isStringValNullOrEmpty(start_date) || serviceUtil.isStringValNullOrEmpty(end_date));
 }
 
 async function updateTransactionByCurrentDatetime() {
     // if current date time >= start time  && <= end time, status change to Ongoing
     const currentDateTime = new Date();
     try {
-        await Transaction.updateMany(
-            {
-                start_date: {"$lte": currentDateTime},
-                end_date: {"$gte": currentDateTime}
-            },
-            {status: ONGOING}
-        );
+        await Transaction.updateMany({
+            start_date: {"$lte": currentDateTime}, end_date: {"$gte": currentDateTime}
+        }, {status: ONGOING});
         const ongoingLockerList = await Transaction.find({status: ONGOING}, {_id: 1, locker_id: 1});
         // list of below
         // {

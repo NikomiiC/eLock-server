@@ -19,6 +19,8 @@ const ADMIN = 'admin';
 const BOOKED = 'Booked';
 const ONGOING = 'Ongoing';
 const COMPLETED = 'Completed';
+const MODIFY = 'MODIFY';
+const CANCEL = 'CANCEL';
 
 /**
  * Method: GET
@@ -77,8 +79,8 @@ router.post('/create_transaction', async (req, res) => {
         if (validToBook) {
             const transaction = await transactionController.createTransaction(params);
             // set locker passcode, i dont do encrypt to keep it simple
-            await lockerController.setPasscode(params.passcode, params.locker_id);
-            await lockerController.updateTransaction(params.locker_id, transaction);
+            // await lockerController.setPasscode(params.passcode, params.locker_id);
+            await lockerController.addTransactionToLocker(params.locker_id, transaction);
             res.send(resResult(0, `Successfully create transaction`, transaction));
         } else {
             return res.status(422).send(resResult(1, "User has hit maximum 2 booking today."));

@@ -196,7 +196,14 @@ async function removeTransactionId(locker_id, trn_id) {
     try {
         return await Locker.updateOne(
             {locker_id: locker_id},
-            {"$pull": {trn_list: trn_id}}
+            {
+                "$pull": {
+                    "trn_list":
+                        {
+                            "trn_id": trn_id
+                        }
+                }
+            }
         );
     } catch (err) {
         console.log(err.message);
@@ -233,7 +240,35 @@ async function updateLockersStatusAndTrn(lockerList, status) {
     }
 }
 
-async function updateTransaction(locker_id, trn) {
+async function addTransactionToLocker(locker_id, trn) {
+    try {
+        const newTrn = {
+            trn_id: trn._id,
+            status: trn.status,
+            latest_update_datetime: trn.latest_update_datetime,
+            start_date: trn.start_date,
+            end_date: trn.end_date,
+            start_index: trn.start_index,
+            end_index: trn.end_index
+        }
+        console.log(newTrn);
+        await Locker.findOneAndUpdate(
+            {_id: locker_id},
+            {
+                "$push":
+                    {
+                        "trn_list": newTrn
+                    }
+            },
+            {returnOriginal: false}
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function updateTransactionInLocker(locker_id, trn) {
     try {
         const newTrn = {
             trn_id: trn._id,
@@ -276,5 +311,6 @@ module.exports = {
     setPasscode,
     removeTransactionId,
     updateLockersStatusAndTrn,
-    updateTransaction
+    addTransactionToLocker,
+    updateTransactionInLocker
 }
