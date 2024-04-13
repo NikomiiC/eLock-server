@@ -303,11 +303,9 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
                 case MODIFY:
                     if (isFieldsEmpty(doc)) {
                         sendError(`Missing fields, transaction = ${doc.toString()}`);
-                    }
-                    else if(!await isValidToCancel(trn_id)){
+                    } else if (!await isValidToCancel(trn_id)) {
                         sendError(`Failed to update, transaction is ongoing or completed.`);
-                    }
-                    else {
+                    } else {
                         //able to update
                         // check if new locker is valid in duration
                         if (!old_trn.locker_id.equals(doc.locker_id)) { // diff locker
@@ -317,11 +315,9 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
                                 sendError("Locker is occupied in current slot.");
                             } else {
                                 //unset old locker slots
-                                await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
+                                await slotsController.unsetSlot(old_trn.locker_id, old_trn.start_date, old_trn.end_date, old_trn.start_index, old_trn.end_index, slot);
                                 //set new locker slots
                                 await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
-                                //unset old trn and set new trn
-                                await lockerController.removeTransactionId(old_trn.locker_id, old_trn._id);
 
                             }
                         } else {
@@ -339,11 +335,14 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
                                 sendError("Failed to update, slot is occupied.");
                             }
                             //update slots
-                            const isNewLockerBooked = await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
+                            //set new slot
+                            await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
                             await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
                         }
 
                         const tran = await Transaction.findOneAndUpdate({_id: trn_id}, doc, {returnOriginal: false});
+                        //unset old trn and set new trn
+                        await lockerController.removeTransactionId(old_trn.locker_id, old_trn._id);
                         await lockerController.addTransactionToLocker(doc.locker_id, tran);
                         return tran;
                     }
@@ -379,8 +378,7 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
                     sendError("No action matched.");
                     break;
             }
-        } else
-        {
+        } else {
             sendError("Failed to modify transaction. Role is not admin or the transaction is not belong to current user");
         }
 
