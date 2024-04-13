@@ -314,11 +314,11 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
                             if (isNewLockerBooked) {
                                 sendError("Locker is occupied in current slot.");
                             } else {
-                                //unset old locker slots
-                                await slotsController.unsetSlot(old_trn.locker_id, old_trn.start_date, old_trn.end_date, old_trn.start_index, old_trn.end_index, slot);
                                 //set new locker slots
                                 await slotsController.addSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
-
+                                //unset old locker slots
+                                await getOverlapTransaction(old_trn.locker_id, old_trn.start_index, old_trn.end_index, old_trn.start_date, old_trn.end_date);
+                                await slotsController.unsetSlot(old_trn.locker_id, old_trn.start_date, old_trn.end_date, old_trn.start_index, old_trn.end_index, slot);
                             }
                         } else {
                             //same locker
