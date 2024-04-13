@@ -11,6 +11,7 @@ const VALID = 'Valid';
 const SMALL = 'Small';
 const MEDIUM = 'Medium';
 const LARGE = 'Large';
+const DEFAULT_PASSCODE = '000000';
 
 async function getOccupiedLockersByIds(locker_id_list) {
     try {
@@ -108,11 +109,51 @@ async function updateStatus(locker_id, status) {
     const locker = await getLockerById(locker_id);
     let new_locker;
     if (!locker) {
-        sendError('Update status fail, invalid feedback');
+        sendError('Update status fail, invalid locker');
     } else {
         try {
             new_locker = await Locker.findOneAndUpdate({_id: locker_id}, {
                 status: status,
+            }, {
+                returnOriginal: false
+            });
+            return new_locker;
+        } catch (err) {
+            sendError(err.message);
+        }
+    }
+}
+
+async function releaseLocker(locker_id) {
+    const locker = await getLockerById(locker_id);
+    let new_locker;
+    if (!locker) {
+        sendError('Update status fail, invalid locker');
+    } else {
+        try {
+            new_locker = await Locker.findOneAndUpdate({_id: locker_id}, {
+                status: VALID,
+                passcode: DEFAULT_PASSCODE
+            }, {
+                returnOriginal: false
+            });
+            return new_locker;
+        } catch (err) {
+            sendError(err.message);
+        }
+    }
+}
+
+async function occupiedLocker(locker_id, passcode) {
+    const locker = await getLockerById(locker_id);
+    let new_locker;
+    if (!locker) {
+        sendError('Update status fail, invalid locker');
+    } else {
+        try {
+            new_locker = await Locker.findOneAndUpdate({_id: locker_id}, {
+                status: OCCUPIED,
+                passcode: passcode
             }, {
                 returnOriginal: false
             });
@@ -310,5 +351,7 @@ module.exports = {
     removeTransactionId,
     updateLockersStatusAndTrn,
     addTransactionToLocker,
-    updateTransactionInLocker
+    updateTransactionInLocker,
+    releaseLocker,
+    occupiedLocker
 }

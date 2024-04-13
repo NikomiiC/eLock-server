@@ -368,7 +368,15 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
 
                 case RELEASE:
                     //release locker
-                    await lockerController.updateStatus(doc.locker_id, VALID);
+                    if(!await isValidToRelease(trn_id)){
+                        sendError("Failed to release, transaction is not ongoing or completed.")
+                    }
+                    //check passcode
+                    const locker = await lockerController.getLockerById(doc.locker_id);
+                    if(locker.passcode !== doc.passcode){
+                        sendError("Invalid passcode, please try again.");
+                    }
+                    await lockerController.releaseLocker(doc.locker_id);
                     //unset slots
                     await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
                     await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
@@ -391,7 +399,11 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
 async function isValidToCancel(trn_id) {
     const trn = await Transaction.findById(trn_id);
     return trn.status === BOOKED;
+}
 
+async function isValidToRelease(trn_id) {
+    const trn = await Transaction.findById(trn_id);
+    return trn.status === ONGOING;
 }
 
 function isFieldsEmpty(doc) {
@@ -416,15 +428,6 @@ async function updateTransactionByCurrentDatetime() {
             start_date: {"$lte": currentDateTime}, end_date: {"$gte": currentDateTime}
         }, {status: ONGOING});
         const ongoingLockerList = await Transaction.find({status: ONGOING}, {_id: 1, locker_id: 1});
-        // list of below
-        // {
-        //   "_id": {
-        //     "$oid": "65f940684a467c8af8802b67"
-        //   },
-        //   "locker_id": {
-        //     "$oid": "65f2a247f04502db5d4eb44c"
-        //   }
-        // }
         // update locker status and trn_id
         await lockerController.updateLockersStatusAndTrn(ongoingLockerList, OCCUPIED);
         await slotsController.deletePreviousRecord();
