@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+require('./models/Token');
 require('./models/User');
 require('./models/Feedback');
 require('./models/Location');

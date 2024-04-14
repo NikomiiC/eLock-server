@@ -22,6 +22,10 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: "u"
     },
+    verified: {
+        type: Boolean,
+        default: false,
+    },
     gender: {
         type: String,
         default: null
