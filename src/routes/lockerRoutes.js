@@ -218,6 +218,9 @@ router.post('/locker_use/:id', async (req, res) => {
     const params = req.body;
 
     try {
+        if(serviceUtil.isStringValNullOrEmpty(trn_id || serviceUtil.isStringValNullOrEmpty(locker_id))){
+            sendError(`Invalid params. trn_ id: ${trn_id}, locker_id: ${locker_id}`);
+        }
         const trn = transactionController.getTransactionById(trn_id);
         if(trn === undefined){
             sendError("Invalid transaction.");
