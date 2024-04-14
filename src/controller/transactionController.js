@@ -93,7 +93,7 @@ async function getAllUserTransactions(user_id, status) {
             m = {"$match": {$and: [{status: status}, {user_id: new mongoose.Types.ObjectId(user_id)}]}};
             return await Transaction.aggregate([m, add_status, s]);
         } else {
-            return await Transaction.find({user_id: user_id, status: status}).sort({latest_update_datetime: -1});
+            return await Transaction.find({user_id: user_id}).sort({latest_update_datetime: -1});
         }
 
     } catch (err) {
@@ -368,12 +368,12 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
 
                 case RELEASE:
                     //release locker
-                    if(!await isValidToRelease(trn_id)){
+                    if (!await isValidToRelease(trn_id)) {
                         sendError("Failed to release, transaction is not ongoing or completed.")
                     }
                     //check passcode
                     const locker = await lockerController.getLockerById(doc.locker_id);
-                    if(locker.passcode !== doc.passcode){
+                    if (locker.passcode !== doc.passcode) {
                         sendError("Invalid passcode, please try again.");
                     }
                     await lockerController.releaseLocker(doc.locker_id);
@@ -422,16 +422,44 @@ function isFieldsEmpty(doc) {
 
 async function updateTransactionByCurrentDatetime() {
     // if current date time >= start time  && <= end time, status change to Ongoing
-    const currentDateTime = new Date();
+    let currentDateTime = new Date();
+    const currentIndex = currentDateTime.getHours();
+    currentDateTime.setHours(0, 0, 0, 0);
+    let nextDay = new Date(currentDateTime);
+    nextDay.setDate(currentDateTime.getDate() + 1);
     try {
-        await Transaction.updateMany({
-            start_date: {"$lte": currentDateTime}, end_date: {"$gte": currentDateTime}
-        }, {status: ONGOING});
-        const ongoingLockerList = await Transaction.find({status: ONGOING}, {_id: 1, locker_id: 1});
-        // update locker status and trn_id
-        await lockerController.updateLockersStatusAndTrn(ongoingLockerList, OCCUPIED);
+        // update 2 condition. 1. startdate = enddate. 2. startdate != enddate
+        await Transaction.updateMany(
+            {
+                start_date: {"$lt": currentDateTime},
+                end_date: {"$gte": currentDateTime},
+                status: BOOKED
+            },
+            {status: ONGOING, latest_update_datetime: new Date()}
+        );
+        await Transaction.updateMany(
+            {
+                start_date: {"$gte": currentDateTime},
+                end_date: {"$lt": nextDay},
+                status: BOOKED,
+                start_index: {"$lte": currentIndex}
+            },
+            {status: ONGOING, latest_update_datetime: new Date()}
+        );
+        //const ongoingLockerList = await Transaction.find({status: ONGOING}, {_id: 1, locker_id: 1});
+        // update locker status and trn_id, user update themself
+        // await lockerController.updateLockersStatusAndTrn(ongoingLockerList, OCCUPIED);
         await slotsController.deletePreviousRecord();
         // no auto release, only front end send release request then change status, use updateTransaction to release
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function getTransactionById(trn_id) {
+    try {
+        return await Transaction.findById(trn_id);
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -448,5 +476,6 @@ module.exports = {
     createTransaction,
     isLessThanTwoBookToday,
     updateTransaction,
-    updateTransactionByCurrentDatetime
+    updateTransactionByCurrentDatetime,
+    getTransactionById
 }

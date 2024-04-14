@@ -21,6 +21,9 @@ const ADMIN = 'admin';
 const VALID = 'Valid';
 const OCCUPIED = 'Occupied';
 const UPDATE_LOCATION_ID = 'UPDATE_LOCATION_ID';
+const ONGOING = 'Ongoing';
+const COMPLETED = 'Completed';
+const BOOKED = 'Booked';
 
 /**
  * Method GET
@@ -207,6 +210,34 @@ router.post('/locker/update_passcode/:id', async (req, res) => {
         return res.status(422).send(resResult(1, err.message));
     }
 
-})
-;
+});
+
+router.post('/locker_use/:id', async (req, res) => {
+    const trn_id = req.query.trn_id;
+    const locker_id = req.params.id;
+    const params = req.body;
+
+    try {
+        const trn = transactionController.getTransactionById(trn_id);
+        if(trn === undefined){
+            sendError("Invalid transaction.");
+        }
+        if(trn.status === BOOKED){
+            sendError("Transaction not start yet. Please try after the booking start.");
+        }
+        if(trn.status === COMPLETED){
+            sendError("Fail to use locker. Transaction is completed.");
+        }
+
+        const new_locker = await lockerController.updateStatus(locker_id, OCCUPIED);
+
+        res.send(resResult(0, `Successfully update status `, new_locker));
+
+
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+
+});
+
 module.exports = router;
