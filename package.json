@@ -12,7 +12,7 @@
     "url": "git+https://github.com/NikomiiC/eLock-server.git"
   },
   "jest": {
-    "verbose": false
+    "verbose": true
   },
   "keywords": [],
   "author": "",
