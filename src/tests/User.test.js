@@ -2,25 +2,21 @@ const mongoose = require("mongoose");
 const request = require("supertest");
 const app = require("../index");
 const axios = require('axios');
-require("dotenv").config();
-const MONGO_URI='mongodb+srv://elockhub:zxcasd123456@elock.5nxt5p2.mongodb.net/?retryWrites=true&w=majority';
-const BASE_URL = 'http://127.0.0.1:8080';
-
-const ADMIN_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWJkMThmNzc4ZmExYzIyOTY3Mzc0MWYiLCJpYXQiOjE3MTI4NDgwMjZ9.LcG0UFRf2BSEXtJNJZ3np6_ZarloDsnKI_hdDDXOE7s";
+require("dotenv").config("../../env");
 
 let config = {
     method: 'get',
     maxBodyLength: Infinity,
-    url: BASE_URL,
+    url: process.env.BASE_URL,
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + ADMIN_TOKEN
+        'Authorization': 'Bearer ' + process.env.ADMIN_TOKEN
     }
 };
 
 /* Connecting to the database before each test. */
 beforeEach(async () => {
-    await mongoose.connect(MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI);
 });
 
 /* Closing database connection after each test. */
