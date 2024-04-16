@@ -48,7 +48,7 @@ async function getUncompletedTransactionByPricingId(pricing_id) {
 
 async function removePricingId(pricing_id) {
     try {
-        return await Transaction.updateMany({pricing_id: pricing_id}, {pricing_id: ""},);
+        return await Transaction.updateMany({pricing_id: pricing_id}, {pricing_id: null},);
     } catch (err) {
         console.log(err.message);
         sendError(err.message);

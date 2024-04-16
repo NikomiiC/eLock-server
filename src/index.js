@@ -23,8 +23,6 @@ const transactionRoutes = require('./routes/transactionRoutes');
 
 
 const mongoUri = process.env.MONGO_URI;
-//'mongodb+srv://elockhub:zxcasd123456@elock.5nxt5p2.mongodb.net/?retryWrites=true&w=majority'
-//process.env.MONGO_URI
 const app = express();
 const cors = require("cors");
 
