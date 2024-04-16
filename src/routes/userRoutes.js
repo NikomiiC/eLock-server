@@ -59,7 +59,7 @@ router.post('/update_user', async (req, res) => {
     const params = req.body;
     try {
         //action: chg_pw, update ALL CAPS
-        const user = userController.updateUser(params, req.user._id);
+        let user = await userController.updateUser(params, req.user._id);
         if(params.action === CHG_PW){
             const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY');
             res.send(resResult(0, 'Successfully change password', {token: token, user: user}));

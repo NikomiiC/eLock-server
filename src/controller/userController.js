@@ -112,17 +112,18 @@ async function updateUser(params, uid) {
                 }
                 const user = User.findById(uid);
                 await user.comparePassword(old_password);
-                updated_user = await User.findOneAndUpdate(
+                return await User.findOneAndUpdate(
                     {_id: uid},
                     {password: new_password},
                     {returnOriginal: false}
                 );
-                break;
+                //break;
             case UPDATE:
                 if (serviceUtil.isStringValNullOrEmpty(username) ||
                     serviceUtil.isStringValNullOrEmpty(gender) ||
                     serviceUtil.isStringValNullOrEmpty(dob)) {
-                    updated_user = await User.findOneAndUpdate(
+
+                    return await User.findOneAndUpdate(
                         {_id: uid},
                         {
                             username: username,
@@ -130,9 +131,9 @@ async function updateUser(params, uid) {
                             dob: dob
                         },
                         {returnOriginal: false}
-                    )
+                    );
                 }
-                break;
+                //break;
             default:
                 sendError("No action matched.");
                 break;
