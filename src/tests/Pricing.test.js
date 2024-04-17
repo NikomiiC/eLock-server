@@ -53,9 +53,7 @@ describe("Pricing", () => {
         config.url = process.env.BASE_URL + '/all_pricing';
         config.method = 'get';
         delete config.data;
-        console.log(config);
         const res = await axios.request(config);
-        console.log(res);
         expect(res.status).toBe(200);
         expect(res.data.payload.length).toBeGreaterThan(0);
     });

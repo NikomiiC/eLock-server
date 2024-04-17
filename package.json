@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon src/index.js",
-    "test": "jest --testTimeout=5000"
+    "test": "jest -i --testTimeout=5000"
   },
   "repository": {
     "type": "git",

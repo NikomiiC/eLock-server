@@ -197,7 +197,8 @@ router.post('/update_location/:id', async (req, res) => {
                     .send(resResult(1, `Please pass all parameters. area: ${area}, formatted_address: ${formatted_address}, postcode: ${postcode}, loc: ${loc} `));
             }
             try {
-                const new_location = await Location.findOneAndUpdate(
+                loc.type = "Point";
+                const new_location = await Location.findByIdAndUpdate(
                     {_id: location_id},
                     params,
                     {returnOriginal: false}
