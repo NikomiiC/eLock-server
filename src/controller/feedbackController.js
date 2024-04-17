@@ -124,12 +124,15 @@ async function updateStatus(feedback_id, status) {
 }
 
 async function removeTransaction(trn_id) {
-    try{
+    try {
         return await Feedback.updateMany(
             {transaction_id: trn_id},
-            {transaction_id : null}
+            {
+                $unset:
+                    {transaction_id: 1}
+            }
         );
-    }catch (err) {
+    } catch (err) {
         sendError(err.message);
     }
 }
