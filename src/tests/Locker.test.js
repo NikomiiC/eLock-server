@@ -130,7 +130,6 @@ describe("Locker", () => {
         config.url = process.env.BASE_URL + '/delete_locker';
         config.data = data;
         const res = await axios.request(config);
-        console.log(res);
         expect(res.status).toBe(200);
         expect(res.data.payload).toBe(null);
     });
