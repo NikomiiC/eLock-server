@@ -27,7 +27,7 @@ async function getOccupiedLockersByIds(locker_id_list) {
 async function deleteLockersByIds(locker_id_list) {
     try {
         return await Locker.deleteMany(
-            {_id: {$in: locker_id_list}, status: VALID}
+            {_id: {$in: locker_id_list}}//, status: VALID
         );
     } catch (err) {
         console.log(err.message);

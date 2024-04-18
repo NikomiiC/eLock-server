@@ -54,7 +54,7 @@ router.get('/lockers/by_location_id/:id', async (req, res) => {
     const location_id = req.params.id;
     const status = req.query.status;
     const size = req.query.size;
-    if (location_id === undefined) {
+    if (location_id === undefined || serviceUtil.isStringValNullOrEmpty(location_id)) {
         return res.status(422).send(resResult(1, `Please pass location id, location_id = ${location_id}`));
     }
     try {
@@ -178,16 +178,27 @@ router.post('/delete_locker', async (req, res) => {
     try {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
-            const occupiedLockers = await lockerController.getOccupiedLockersByIds(locker_id_list);
-            if (occupiedLockers.length === 0) {
+            //todo: change to check in slot
+            //const occupiedLockers = await lockerController.getOccupiedLockersByIds(locker_id_list);
+            const bookedLockers = await slotsController.getSlotsByLockerIdList(locker_id_list);
+
+            //todo: might check if lockers are linked with location
+            const locatedLockers = await lockerController.getLocatedLockersByIds(locker_id_list);
+
+            if(locatedLockers.length === 0){
+                await lockerController.deleteLockersByIds(locker_id_list);
+                return res.send(resResult(0, `Successfully delete lockers ${locker_id_list}`));
+            }
+
+            if (bookedLockers.length === 0) {
                 //update transaction locker id to removed
                 await transactionController.updateRemovedLockersIdToEmpty(locker_id_list);
                 await locationController.removeLockersById(location_id, locker_id_list);
                 await lockerController.deleteLockersByIds(locker_id_list);
             } else {
-                return res.status(422).send(resResult(1, `Failed to delete, lockers in use, occupiedLockers: `, occupiedLockers));
+                return res.status(422).send(resResult(1, `Failed to delete, lockers are in use: `, bookedLockers));
             }
-            res.send(resResult(0, `Successfully delete lockers ${locker_id_list}`));
+            return res.send(resResult(0, `Successfully delete lockers ${locker_id_list}`));
         } else {
             return res.status(422).send(resResult(1, "User has no permission to update location."));
         }
@@ -204,7 +215,7 @@ router.post('/locker/update_passcode/:id', async (req, res) => {
 
     try {
         const new_locker = await lockerController.setPasscode(passcode, id);
-        res.send(resResult(0, `Successfully update status `, new_locker));
+        return res.send(resResult(0, `Successfully update status `, new_locker));
     } catch
         (err) {
         return res.status(422).send(resResult(1, err.message));
@@ -234,7 +245,7 @@ router.post('/locker_use/:id', async (req, res) => {
 
         const new_locker = await lockerController.updateStatus(locker_id, OCCUPIED);
 
-        res.send(resResult(0, `Successfully update status `, new_locker));
+        return res.send(resResult(0, `Successfully update status `, new_locker));
 
 
     } catch (err) {

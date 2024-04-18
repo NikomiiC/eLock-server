@@ -69,14 +69,12 @@ describe("Location", () => {
         expect(location).toHaveProperty('area', "Area-Test");
         expect(location).toHaveProperty('formatted_address', 'Address-Test');
         expect(location).toHaveProperty('postcode', "640111");
-        //expect(location).toHaveProperty('loc', loc);
     });
 
     it("should return locations by addressName", async () => {
         config.url = process.env.BASE_URL + '/location/addressName/' + 'Test';
-        console.log(config);
+
         const res = await axios.request(config);
-        console.log(res);
         expect(res.status).toBe(200);
         expect(res.data.payload.length).toBeGreaterThan(0);
     });
@@ -85,7 +83,6 @@ describe("Location", () => {
         config.url = process.env.BASE_URL + '/location_postcode/640111';
 
         const res = await axios.request(config);
-        console.log(res);
         expect(res.status).toBe(200);
         expect(res.data.payload.length).toBe(1);
     });
@@ -99,9 +96,8 @@ describe("Location", () => {
 
     it("should return locations by lon lat", async () => {
         config.url = process.env.BASE_URL + '/locations/' + 103.721141 +'/' + 1.348159;
-        console.log(config);
+
         const res = await axios.request(config);
-        console.log(res);
         expect(res.status).toBe(200);
         expect(res.data.payload.length).toBeGreaterThan(0);
     });
@@ -121,14 +117,12 @@ describe("Location", () => {
         config.method = 'post';
         config.url = process.env.BASE_URL + '/update_location/' + location_id;
         config.data = data;
-        console.log(config);
         const res = await axios.request(config);
         location = res.data.payload;
         expect(res.status).toBe(200);
         expect(location).toHaveProperty('area', "Area-Test-Update");
         expect(location).toHaveProperty('formatted_address', "Address-Test-Update");
         expect(location).toHaveProperty('postcode', "640111");
-        //expect(location).toHaveProperty('loc', loc);
     });
 
     it("should update a location for adding lockers by id", async () => {
@@ -141,7 +135,6 @@ describe("Location", () => {
         config.url = process.env.BASE_URL + '/update_location/add_lockers/' + location_id;
         config.data = data;
         const res = await axios.request(config);
-        console.log(res);
         location = res.data.payload;
         expect(res.status).toBe(200);
         expect(location.locker_list.includes('661f6e11e3badb148f757a58')).toBe(true);

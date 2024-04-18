@@ -178,6 +178,17 @@ async function getSlotsByLockerId(locker_id) {
     }
 }
 
+async function getSlotsByLockerIdList(locker_id_list) {
+    try {
+        return await Slots.find(
+            {locker_id: {$in: locker_id_list}}
+        );
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
 function setTimeToZero(date) {
     let result = new Date(date);
     result.setHours(0, 0, 0, 0);
@@ -257,5 +268,6 @@ module.exports = {
     addSlot,
     getSlotsByLockerId,
     unsetSlot,
-    deletePreviousRecord
+    deletePreviousRecord,
+    getSlotsByLockerIdList
 }
