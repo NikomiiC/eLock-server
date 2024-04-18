@@ -16,11 +16,11 @@ let config = {
 };
 
 let location_id;
-beforeAll(async () => {
+beforeEach(async () => {
     await mongoose.connect(process.env.MONGO_URI);
 });
 
-afterAll(async () => {
+afterEach(async () => {
     await mongoose.connect(process.env.MONGO_URI);
 });
 

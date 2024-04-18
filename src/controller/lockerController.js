@@ -290,7 +290,6 @@ async function addTransactionToLocker(locker_id, trn) {
             start_index: trn.start_index,
             end_index: trn.end_index
         }
-        console.log(newTrn);
         await Locker.findOneAndUpdate(
             {_id: locker_id},
             {

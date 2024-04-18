@@ -30,6 +30,7 @@ const cors = require("cors");
 // app.use(bodyParser.urlencoded({limit: '50mb', extended: true}));
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
 app.use(authRoutes);
 app.use(userRoutes);
 app.use(feedbackRoutes);
@@ -57,3 +58,5 @@ app.get('/', requireAuth, (req, res) => {
 app.listen(8080, () => {
     console.log('listening on port 8080 ');
 });
+
+module.exports = app;

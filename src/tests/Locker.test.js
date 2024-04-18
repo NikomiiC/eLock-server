@@ -16,11 +16,11 @@ let config = {
 };
 
 let locker_id;
-beforeAll(async () => {
+beforeEach(async () => {
     await mongoose.connect(process.env.MONGO_URI);
 });
 
-afterAll(async () => {
+afterEach(async () => {
     await mongoose.connect(process.env.MONGO_URI);
 });
 
@@ -67,15 +67,7 @@ describe("Locker", () => {
     });
 
     it("should return lockers by location_id", async () => {
-        config.url = process.env.BASE_URL + '/lockers/by_location_id/662004b20c624eb798d05065';
-
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
-    });
-
-    it("should return lockers by location_id", async () => {
-        config.url = process.env.BASE_URL + '/lockers/by_location_id/662004b20c624eb798d05065';
+        config.url = process.env.BASE_URL + '/lockers/by_location_id/65f2b25da2a3d734df64142b';
 
         const res = await axios.request(config);
         expect(res.status).toBe(200);

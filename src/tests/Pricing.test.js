@@ -1,26 +1,28 @@
 const mongoose = require("mongoose");
 const request = require("supertest");
 const app = require("../index");
-const axios = require('axios');
+
+// const axios = require('axios');
 const pricingController = require("../controller/pricingController");
 require("dotenv").config("../../env");
 
 let config = {
-    method: 'get',
-    maxBodyLength: Infinity,
-    url: process.env.BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + process.env.ADMIN_TOKEN
-    }
+    // method: 'get',
+    // maxBodyLength: Infinity,
+    baseUrl: process.env.BASE_URL,
+    authorization: {"Authorization": 'Bearer ' + process.env.ADMIN_TOKEN},
+    // headers: {
+    //     'Content-Type': 'application/json',
+    //     'Authorization': 'Bearer ' + process.env.ADMIN_TOKEN
+    // }
 };
-
+const baseUrl = process.env.BASE_URL
 let pricing_id;
-beforeAll(async () => {
+beforeEach(async () => {
     await mongoose.connect(process.env.MONGO_URI);
 });
 
-afterAll(async () => {
+afterEach(async () => {
     await mongoose.connect(process.env.MONGO_URI);
 });
 
@@ -34,15 +36,23 @@ describe("Pricing", () => {
             "follow_up": 3
         });
 
-        config.method = 'post';
-        config.url = process.env.BASE_URL + '/create_pricing';
-        config.headers.Authorization = 'Bearer ' + process.env.ADMIN_TOKEN;
-        config.data = data;
-        const res = await axios.request(config);
-        const pricing = await pricingController.getPricingById(res.data.payload._id);
-        pricing_id = res.data.payload._id;
+        // config.method = 'post';
+        // config.url = baseUrl + '/create_pricing';
+        // config.headers.Authorization = 'Bearer ' + process.env.ADMIN_TOKEN;
+        // config.data = data;
+        //const res = await axios.request(config);
+        const res = await request(app)
+            // .set('Content-Type',  'application/json')
+            // .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .post('/create_pricing')
+            .type('json')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
 
-        expect(res.status).toBe(200);
+        pricing_id = res._body.payload._id;
+        const pricing = await pricingController.getPricingById(pricing_id);
+        expect(res.statusCode).toBe(200);
         expect(pricing).toHaveProperty('name', "test");
         expect(pricing).toHaveProperty('description', "description - test");
         expect(pricing).toHaveProperty('first_hour', 30);
