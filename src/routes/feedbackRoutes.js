@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const requireAuth = require('../middlewares/requireAuth');
 const {resResult, sendError} = require('../util/constants');
 const feedbackController = require("../controller/feedbackController");
+const serviceUtil = require("../controller/serviceController");
 const userController = require("../controller/userController");
 const transactionController = require("../controller/transactionController");
 const Feedback = mongoose.model('Feedback');
@@ -103,7 +104,6 @@ router.post('/create_feedback', async (req, res) => {
     const feedback_header = params.feedback_header;
     const trn_id = params.transaction_id; // if not passing transaction_id means this feedback does not relate to any transaction
     const current_datetime = new Date();
-    console.log(current_datetime)
 
     ticketList[0].user_ticket_datetime = current_datetime; // to sync 3 datetime for later check
     if (feedback_header === null || feedback_header === undefined || feedback_header.length === 0) {
@@ -118,27 +118,39 @@ router.post('/create_feedback', async (req, res) => {
     }
 
     try {
-        const feedback = new Feedback(
-            {
-                feedback_header: params.feedback_header,
-                user_id: req.user._id,
-                transaction_id: trn_id,
-                ticketList: params.ticketList,
-                latest_update_datetime : current_datetime,
-                create_datetime : current_datetime
-            });
+        let feedback;
+        if (serviceUtil.isStringValNullOrEmpty(trn_id)) {
+            feedback = new Feedback(
+                {
+                    feedback_header: params.feedback_header,
+                    user_id: req.user._id,
+                    ticketList: params.ticketList,
+                    latest_update_datetime: current_datetime,
+                    create_datetime: current_datetime
+                });
+        } else {
+            feedback = new Feedback(
+                {
+                    feedback_header: params.feedback_header,
+                    user_id: req.user._id,
+                    transaction_id: trn_id,
+                    ticketList: params.ticketList,
+                    latest_update_datetime: current_datetime,
+                    create_datetime: current_datetime
+                });
+        }
 
         // add commentsList
         await feedback.save();
-        try{
+        try {
             //todo: add feedback id to transaction, test
-            if(trn_id !== undefined){
+            if (!serviceUtil.isStringValNullOrEmpty(trn_id)) {
                 await transactionController.updateFeedbackId(trn_id, feedback._id);
             }
             await userController.updateFeedbackList(req.user._id, feedback._id);
 
             return res.send(resResult(0, `Successfully create a new feedback `, feedback));
-        }catch (err){
+        } catch (err) {
             return res.status(422).send(resResult(1, err.message));
         }
     } catch (err) {
@@ -164,12 +176,12 @@ router.post('/update_feedback/add_ticket/:id', async (req, res) => {
         if (role === USER) {
             // add a new ticket to ticketList
             let old_feedback = await feedbackController.getFeedbackById(feedback_id);
-            if(old_feedback.status === OPEN){
+            if (old_feedback.status === OPEN) {
                 let new_ticket = {
-                    user_ticket_datetime : current_datetime,
-                    ticket_body : params.ticketList[0].ticket_body,
-                    reply_body : null,
-                    reply_datetime : null
+                    user_ticket_datetime: current_datetime,
+                    ticket_body: params.ticketList[0].ticket_body,
+                    reply_body: null,
+                    reply_datetime: null
                 }
                 //update value
                 old_feedback.ticketList.push(new_ticket);
@@ -181,8 +193,7 @@ router.post('/update_feedback/add_ticket/:id', async (req, res) => {
                         returnOriginal: false
                     });
                 res.send(resResult(0, `Successfully add ticket`, new_feedback));
-            }
-            else{
+            } else {
                 return res.status(422).send(resResult(1, "This ticket is closed."));
             }
         } else {
@@ -235,7 +246,7 @@ router.post('/update_feedback/edit_ticket/:id', async (req, res) => {
             const new_feedback = await Feedback.findOneAndUpdate(
                 {_id: feedback_id, ticketList: {$elemMatch: {reply_body: undefined}}},
                 {
-                    latest_update_datetime : current_datetime,
+                    latest_update_datetime: current_datetime,
                     "$set": {
                         "ticketList.$.reply_body": reply_body,
                         "ticketList.$.reply_datetime": current_datetime,

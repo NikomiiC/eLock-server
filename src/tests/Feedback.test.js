@@ -2,82 +2,138 @@ const mongoose = require("mongoose");
 const request = require("supertest");
 const app = require("../index");
 const axios = require('axios');
-require("dotenv").config();
-const MONGO_URI='mongodb+srv://elockhub:zxcasd123456@elock.5nxt5p2.mongodb.net/?retryWrites=true&w=majority';
-const BASE_URL = 'http://127.0.0.1:8080';
-
-const ADMIN_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NWJkMThmNzc4ZmExYzIyOTY3Mzc0MWYiLCJpYXQiOjE3MTI4NDgwMjZ9.LcG0UFRf2BSEXtJNJZ3np6_ZarloDsnKI_hdDDXOE7s";
+const feedbackController = require("../controller/feedbackController");
+require("dotenv").config("../../env");
 
 let config = {
-    method: 'get',
+    method: 'post',
     maxBodyLength: Infinity,
-    url: BASE_URL,
+    url: process.env.BASE_URL,
     headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + ADMIN_TOKEN
+        'Authorization': 'Bearer ' + process.env.NICOLE_TOKEN
     }
 };
 
-/* Connecting to the database before each test. */
-beforeEach(async () => {
-    await mongoose.connect(MONGO_URI);
+let feedback_id, feedback;
+beforeAll(async () => {
+    await mongoose.connect(process.env.MONGO_URI);
 });
 
-/* Closing database connection after each test. */
-afterEach(async () => {
-    await mongoose.connection.close();
+afterAll(async () => {
+    await mongoose.connect(process.env.MONGO_URI);
 });
 
-describe("GET /all_users", () => {
-    it("should return all users", async () => {
-        config.url = config.url + '/all_users';
+describe("Feedback", () => {
+    const trn_id = '66213c3e5c4700bf8fda6335';
+    it("should create a feedback", async () => {
+        let data = {
+            feedback_header: "feedback_header",
+            transaction_id: "66213c3e5c4700bf8fda6335",
+            ticketList: [
+                {
+                    ticket_body: "ticket_body",
+                    reply_body: null,
+                    reply_datetime: null
+                }
+            ]
+        };
+
+        config.url = process.env.BASE_URL + '/create_feedback';
+        config.data = data;
+        const res = await axios.request(config);
+        feedback_id = res.data.payload._id;
+
+        feedback = await feedbackController.getFeedbackById(feedback_id);
+
+        expect(res.status).toBe(200);
+        expect(feedback).toHaveProperty('status', "Open");
+        expect(feedback).toHaveProperty('feedback_header', "feedback_header");
+        expect(feedback.ticketList[0].ticket_body).toBe("ticket_body");
+        expect(feedback).toHaveProperty('transaction_id', new mongoose.Types.ObjectId('66213c3e5c4700bf8fda6335'));
+
+    });
+
+    it("should update a feedback by admin - response for ticket", async () => {
+        let data = {
+            reply_body: "admin reply"
+        };
+        config.url = process.env.BASE_URL + '/update_feedback/edit_ticket/' + feedback_id;
+        config.headers.Authorization = 'Bearer ' + process.env.ADMIN_TOKEN;
+        config.data = data;
+        const res = await axios.request(config);
+
+        feedback = res.data.payload;
+
+        expect(res.status).toBe(200);
+        expect(feedback.ticketList[0].reply_body).toBe("admin reply");
+
+    });
+
+    it("should update a feedback by user - add ticket", async () => {
+        let data = {
+            feedback_header: "feedback_header",
+            transaction_id: "66213c3e5c4700bf8fda6335",
+            ticketList: [
+                {
+                    ticket_body: "ticket_body2",
+                    reply_body: null,
+                    reply_datetime: null
+                }
+            ]
+        };
+        config.url = process.env.BASE_URL + '/update_feedback/add_ticket/' + feedback_id;
+        config.headers.Authorization = 'Bearer ' + process.env.NICOLE_TOKEN;
+        config.data = data;
+        const res = await axios.request(config);
+
+        feedback = res.data.payload;
+
+        expect(res.status).toBe(200);
+        expect(feedback.ticketList[1].ticket_body).toBe("ticket_body2");
+
+    });
+
+    it("should update a feedback - update status", async () => {
+        let data = {
+            status: "Closed"
+        };
+        config.url = process.env.BASE_URL + '/edit_feedback/update_status/' + feedback_id;
+
+        config.data = data;
+        const res = await axios.request(config);
+
+        feedback = res.data.payload;
+
+        expect(res.status).toBe(200);
+        expect(feedback).toHaveProperty('status', "Closed");
+
+    });
+
+    it("should return all feedbacks - admin", async () => {
+        config.url = process.env.BASE_URL + '/all_feedbacks_all_user';
+        config.method = 'get';
+        config.headers.Authorization = 'Bearer ' + process.env.ADMIN_TOKEN;
+        delete config.data;
         const res = await axios.request(config);
         expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThan(0);
+        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it("should return all feedbacks - user", async () => {
+        config.url = process.env.BASE_URL + '/all_feedbacks';
+        config.headers.Authorization = 'Bearer ' + process.env.NICOLE_TOKEN;
+        const res = await axios.request(config);
+        expect(res.status).toBe(200);
+        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
+    });
+
+    it("should return feedback by feedback_id", async () => {
+        config.url = process.env.BASE_URL + '/feedback/' + feedback_id;
+        const res = await axios.request(config);
+        feedback = res.data.payload;
+        expect(res.status).toBe(200);
+        expect(feedback._id).toBe(feedback_id);
     });
 });
-//
-// describe("GET /api/products/:id", () => {
-//     it("should return a product", async () => {
-//         const res = await request(app).get(
-//             "/api/products/6331abc9e9ececcc2d449e44"
-//         );
-//         expect(res.statusCode).toBe(200);
-//         expect(res.body.name).toBe("Product 1");
-//     });
-// });
-//
-// describe("POST /api/products", () => {
-//     it("should create a product", async () => {
-//         const res = await request(app).post("/api/products").send({
-//             name: "Product 2",
-//             price: 1009,
-//             description: "Description 2",
-//         });
-//         expect(res.statusCode).toBe(201);
-//         expect(res.body.name).toBe("Product 2");
-//     });
-// });
-//
-// describe("PUT /api/products/:id", () => {
-//     it("should update a product", async () => {
-//         const res = await request(app)
-//             .patch("/api/products/6331abc9e9ececcc2d449e44")
-//             .send({
-//                 name: "Product 4",
-//                 price: 104,
-//                 description: "Description 4",
-//             });
-//         expect(res.statusCode).toBe(200);
-//         expect(res.body.price).toBe(104);
-//     });
-// });
-//
-// describe("DELETE /api/products/:id", () => {
-//     it("should delete a product", async () => {
-//         const res = await request(app).delete(
-//             "/api/products/6331abc9e9ececcc2d449e44"
-//         );
-//         expect(res.statusCode).toBe(200);
-//     });
-// });
+
