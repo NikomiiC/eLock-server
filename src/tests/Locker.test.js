@@ -1,19 +1,8 @@
 const mongoose = require("mongoose");
 const request = require("supertest");
 const app = require("../index");
-const axios = require('axios');
 const lockerController = require("../controller/lockerController");
 require("dotenv").config("../../env");
-
-let config = {
-    method: 'post',
-    maxBodyLength: Infinity,
-    url: process.env.BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + process.env.ADMIN_TOKEN
-    }
-};
 
 let locker_id;
 beforeEach(async () => {
@@ -33,65 +22,83 @@ describe("Locker", () => {
             }
         ]);
 
-        config.url = process.env.BASE_URL + '/create_lockers';
-        config.headers.Authorization = 'Bearer ' + process.env.ADMIN_TOKEN;
-        config.data = data;
-        const res = await axios.request(config);
-        locker_id = res.data.payload[0]._id;
+        const res = await request(app)
+            .post('/create_lockers')
+            .type('json')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
+
+        locker_id = res.body.payload[0]._id;
 
         const locker = await lockerController.getLockerById(locker_id);
 
-        expect(res.status).toBe(200);
+        expect(res.statusCode).toBe(200);
         expect(locker).toHaveProperty('status', "Valid");
         expect(locker).toHaveProperty('size', "Small");
         expect(locker).toHaveProperty('passcode', "000000");
     });
 
     it("should return all lockers", async () => {
-        config.url = process.env.BASE_URL + '/all_lockers';
-        config.method = 'get';
-        delete config.data;
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
+
+        const res = await request(app)
+            .get('/all_lockers')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThanOrEqual(0);
     });
 
     it("should return locker by locker_id", async () => {
-        config.url = process.env.BASE_URL + '/locker/' + locker_id;
-        const res = await axios.request(config);
-        const locker = res.data.payload.locker;
-        expect(res.status).toBe(200);
+
+        const res = await request(app)
+            .get('/locker/' + locker_id)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        const locker = res.body.payload.locker;
+        expect(res.statusCode).toBe(200);
         expect(locker).toHaveProperty('status', "Valid");
         expect(locker).toHaveProperty('size', "Small");
         expect(locker).toHaveProperty('passcode', "000000");
     });
 
     it("should return lockers by location_id", async () => {
-        config.url = process.env.BASE_URL + '/lockers/by_location_id/65f2b25da2a3d734df64142b';
 
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
+        const res = await request(app)
+            .get('/lockers/by_location_id/65f2b25da2a3d734df64142b')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThanOrEqual(0);
     });
 
     it("should return locker by transaction id", async () => {
-        config.url = process.env.BASE_URL + '/locker/by_trn_id/661813879df314e10d900ae4';
+        const res = await request(app)
+            .get('/locker/by_trn_id/661813879df314e10d900ae4')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
 
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThanOrEqual(0);
     });
 
     it("should update a locker status by id", async () => {
         let data = JSON.stringify({
             "status": "Occupied"
         });
-        config.method = 'post';
-        config.url = process.env.BASE_URL + '/locker/update_status/' + locker_id;
-        config.data = data;
-        const res = await axios.request(config);
-        const locker = res.data.payload;
-        expect(res.status).toBe(200);
+
+        const res = await request(app)
+            .post('/locker/update_status/' + locker_id)
+            .type('json')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
+
+        const locker = res.body.payload;
+        expect(res.statusCode).toBe(200);
         expect(locker).toHaveProperty('status', "Occupied");
         expect(locker).toHaveProperty('size', "Small");
         expect(locker).toHaveProperty('passcode', "000000");
@@ -101,12 +108,16 @@ describe("Locker", () => {
         let data = JSON.stringify({
             "passcode": "123456"
         });
-        config.method = 'post';
-        config.url = process.env.BASE_URL + '/locker/update_passcode/' + locker_id;
-        config.data = data;
-        const res = await axios.request(config);
-        const locker = res.data.payload;
-        expect(res.status).toBe(200);
+
+        const res = await request(app)
+            .post('/locker/update_passcode/' + locker_id)
+            .type('json')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
+
+        const locker = res.body.payload;
+        expect(res.statusCode).toBe(200);
         expect(locker).toHaveProperty('passcode', "123456");
     });
 
@@ -119,11 +130,15 @@ describe("Locker", () => {
             ]
         });
 
-        config.url = process.env.BASE_URL + '/delete_locker';
-        config.data = data;
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload).toBe(null);
+        const res = await request(app)
+            .post('/delete_locker')
+            .type('json')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload).toBe(null);
     });
 });
 
