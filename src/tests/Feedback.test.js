@@ -1,19 +1,8 @@
 const mongoose = require("mongoose");
 const request = require("supertest");
 const app = require("../index");
-const axios = require('axios');
 const feedbackController = require("../controller/feedbackController");
 require("dotenv").config("../../env");
-
-let config = {
-    method: 'post',
-    maxBodyLength: Infinity,
-    url: process.env.BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + process.env.NICOLE_TOKEN
-    }
-};
 
 let feedback_id, feedback;
 beforeEach(async () => {
@@ -25,11 +14,11 @@ afterEach(async () => {
 });
 
 describe("Feedback", () => {
-    const trn_id = '66213c3e5c4700bf8fda6335';
+    const trn_id = '662201396892dd0e198a6c86';
     it("should create a feedback", async () => {
         let data = {
             feedback_header: "feedback_header",
-            transaction_id: "66213c3e5c4700bf8fda6335",
+            transaction_id: trn_id,
             ticketList: [
                 {
                     ticket_body: "ticket_body",
@@ -39,18 +28,22 @@ describe("Feedback", () => {
             ]
         };
 
-        config.url = process.env.BASE_URL + '/create_feedback';
-        config.data = data;
-        const res = await axios.request(config);
-        feedback_id = res.data.payload._id;
+        const res = await request(app)
+            .post('/create_feedback')
+            .type('json')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.NICOLE_TOKEN)
+            .send(data);
+
+        feedback_id = res.body.payload._id;
 
         feedback = await feedbackController.getFeedbackById(feedback_id);
 
-        expect(res.status).toBe(200);
+        expect(res.statusCode).toBe(200);
         expect(feedback).toHaveProperty('status', "Open");
         expect(feedback).toHaveProperty('feedback_header', "feedback_header");
         expect(feedback.ticketList[0].ticket_body).toBe("ticket_body");
-        expect(feedback).toHaveProperty('transaction_id', new mongoose.Types.ObjectId('66213c3e5c4700bf8fda6335'));
+        expect(feedback).toHaveProperty('transaction_id', new mongoose.Types.ObjectId(trn_id));
 
     });
 
@@ -58,14 +51,17 @@ describe("Feedback", () => {
         let data = {
             reply_body: "admin reply"
         };
-        config.url = process.env.BASE_URL + '/update_feedback/edit_ticket/' + feedback_id;
-        config.headers.Authorization = 'Bearer ' + process.env.ADMIN_TOKEN;
-        config.data = data;
-        const res = await axios.request(config);
 
-        feedback = res.data.payload;
+        const res = await request(app)
+            .post('/update_feedback/edit_ticket/' + feedback_id)
+            .type('json')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
 
-        expect(res.status).toBe(200);
+        feedback = res.body.payload;
+
+        expect(res.statusCode).toBe(200);
         expect(feedback.ticketList[0].reply_body).toBe("admin reply");
 
     });
@@ -82,14 +78,17 @@ describe("Feedback", () => {
                 }
             ]
         };
-        config.url = process.env.BASE_URL + '/update_feedback/add_ticket/' + feedback_id;
-        config.headers.Authorization = 'Bearer ' + process.env.NICOLE_TOKEN;
-        config.data = data;
-        const res = await axios.request(config);
 
-        feedback = res.data.payload;
+        const res = await request(app)
+            .post('/update_feedback/add_ticket/' + feedback_id)
+            .type('json')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.NICOLE_TOKEN)
+            .send(data);
 
-        expect(res.status).toBe(200);
+        feedback = res.body.payload;
+
+        expect(res.statusCode).toBe(200);
         expect(feedback.ticketList[1].ticket_body).toBe("ticket_body2");
 
     });
@@ -98,41 +97,52 @@ describe("Feedback", () => {
         let data = {
             status: "Closed"
         };
-        config.url = process.env.BASE_URL + '/edit_feedback/update_status/' + feedback_id;
 
-        config.data = data;
-        const res = await axios.request(config);
+        const res = await request(app)
+            .post('/edit_feedback/update_status/' + feedback_id)
+            .type('json')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.NICOLE_TOKEN)
+            .send(data);
 
-        feedback = res.data.payload;
+        feedback = res.body.payload;
 
-        expect(res.status).toBe(200);
+        expect(res.statusCode).toBe(200);
         expect(feedback).toHaveProperty('status', "Closed");
 
     });
 
     it("should return all feedbacks - admin", async () => {
-        config.url = process.env.BASE_URL + '/all_feedbacks_all_user';
-        config.method = 'get';
-        config.headers.Authorization = 'Bearer ' + process.env.ADMIN_TOKEN;
-        delete config.data;
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
+
+        const res = await request(app)
+            .get('/all_feedbacks_all_user')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThanOrEqual(0);
     });
 
     it("should return all feedbacks - user", async () => {
-        config.url = process.env.BASE_URL + '/all_feedbacks';
-        config.headers.Authorization = 'Bearer ' + process.env.NICOLE_TOKEN;
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
+
+        const res = await request(app)
+            .get('/all_feedbacks')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.NICOLE_TOKEN);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThanOrEqual(0);
     });
 
     it("should return feedback by feedback_id", async () => {
-        config.url = process.env.BASE_URL + '/feedback/' + feedback_id;
-        const res = await axios.request(config);
-        feedback = res.data.payload;
-        expect(res.status).toBe(200);
+
+        const res = await request(app)
+            .get('/feedback/' + feedback_id)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.NICOLE_TOKEN);
+
+        feedback = res.body.payload;
+        expect(res.statusCode).toBe(200);
         expect(feedback._id).toBe(feedback_id);
     });
 });

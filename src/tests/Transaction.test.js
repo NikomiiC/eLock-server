@@ -1,20 +1,9 @@
 const mongoose = require("mongoose");
 const request = require("supertest");
 const app = require("../index");
-const axios = require('axios');
 const transactionController = require("../controller/transactionController");
 const userController = require("../controller/userController");
 require("dotenv").config("../../env");
-
-let config = {
-    method: 'post',
-    maxBodyLength: Infinity,
-    url: process.env.BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + process.env.ADMIN_TOKEN
-    }
-};
 
 let trn_id, user;
 beforeEach(async () => {
@@ -42,16 +31,19 @@ describe("Transaction", () => {
             end_date: new Date(2024, 3, 28)
         }
 
-        config.url = process.env.BASE_URL + '/create_transaction';
-        config.headers.Authorization = 'Bearer ' + process.env.ADMIN_TOKEN;
-        config.data = data;
-        const res = await axios.request(config);
-        trn_id = res.data.payload._id;
+        const res = await request(app)
+            .post('/create_transaction')
+            .type('json')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
+
+        trn_id = res.body.payload._id;
 
         const trn = await transactionController.getTransactionById(trn_id);
         user = await userController.getUserById("661bfdc2ac36c92048863204");
 
-        expect(res.status).toBe(200);
+        expect(res.statusCode).toBe(200);
         expect(trn).toHaveProperty('status', "Booked");
 
         expect(trn).toHaveProperty('user_id',new mongoose.Types.ObjectId('661bfdc2ac36c92048863204'));
@@ -63,37 +55,28 @@ describe("Transaction", () => {
     });
 
     it("should return all transactions", async () => {
-        config.url = process.env.BASE_URL + '/user_all_transaction';
-        config.method = 'get';
-        delete config.data;
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
+
+        const res = await request(app)
+            .get('/user_all_transaction')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThanOrEqual(0);
     });
 
     it("should return all transactions of a user", async () => {
-        config.headers.Authorization = 'Bearer ' + process.env.NICOLE_TOKEN;
-        config.url = process.env.BASE_URL + '/user_all_transaction';
-        const res = await axios.request(config);
-        const locker = res.data.payload.locker;
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThanOrEqual(0);
+
+        const res = await request(app)
+            .get('/user_all_transaction')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.NICOLE_TOKEN);
+
+        const locker = res.body.payload.locker;
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThanOrEqual(0);
         expect(user.trn_list.includes(trn_id)).toBe(true);
     });
-
-
-    // ///teste
-    // it("test", async () => {
-    //     config.method = 'get';
-    //     user = await userController.getUserById("661bfdc2ac36c92048863204");
-    //     config.url = process.env.BASE_URL + '/user/661bfdc2ac36c92048863204';
-    //     config.headers.Authorization = 'Bearer ' + process.env.NICOLE_TOKEN;
-    //     const res = await axios.request(config);
-    //     expect(res.status).toBe(200);
-    //     expect(res.data.payload.username).toBe("nicole");
-    //     expect(res.data.payload._id).toBe('661bfdc2ac36c92048863204');
-    //     expect(user).toHaveProperty('_id',new mongoose.Types.ObjectId('661bfdc2ac36c92048863204'));
-    // });
 
 });
 
