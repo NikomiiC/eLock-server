@@ -6,6 +6,7 @@ const feedbackController = require("./feedbackController");
 const lockerController = require("./lockerController");
 const userController = require("./userController");
 const slotsController = require("./slotsController");
+const pricingController = require("./pricingController");
 
 /**
  * CONSTANTS
@@ -49,7 +50,7 @@ async function getUncompletedTransactionByPricingId(pricing_id) {
 async function removePricingId(pricing_id) {
     try {
         return await Transaction.updateMany({pricing_id: pricing_id},
-            {$unset: {pricing_id: 1 }});
+            {$unset: {pricing_id: 1}});
     } catch (err) {
         console.log(err.message);
         sendError(err.message);
@@ -377,12 +378,21 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
                     if (locker.passcode !== doc.passcode) {
                         sendError("Invalid passcode, please try again.");
                     }
-                    await lockerController.releaseLocker(doc.locker_id);
+                    //cost check, update cost if needed
+                    const updated_doc = await checkAndUpdateBalance(doc);
+                    await lockerController.releaseLocker(updated_doc.locker_id);
                     //unset slots
-                    await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
-                    await slotsController.unsetSlot(doc.locker_id, doc.start_date, doc.end_date, doc.start_index, doc.end_index, slot);
-                    await lockerController.removeTransactionId(doc.locker_id, trn_id);
-                    return await Transaction.findOneAndUpdate({_id: trn_id}, {status: COMPLETED}, {returnOriginal: false});
+                    await getOverlapTransaction(updated_doc.locker_id, updated_doc.start_index, updated_doc.end_index, updated_doc.start_date, updated_doc.end_date);
+                    await slotsController.unsetSlot(updated_doc.locker_id, updated_doc.start_date, updated_doc.end_date, updated_doc.start_index, updated_doc.end_index, slot);
+                    await lockerController.removeTransactionId(updated_doc.locker_id, trn_id);
+                    //update user balance
+                    const balance = {
+                        balance: updated_doc.cost * (-1)
+                    }
+                    await userController.updateBalance(balance, updated_doc.user);
+                    return await Transaction.findOneAndUpdate({_id: trn_id}, {status: COMPLETED, cost: updated_doc.cost}, {returnOriginal: false});
+
+
                 default:
                     sendError("No action matched.");
                     break;
@@ -395,6 +405,28 @@ async function updateTransaction(action, doc, trn_id, user_id, role) {
         console.log(err.message);
         sendError(err.message);
     }
+}
+
+async function checkAndUpdateBalance(doc) {
+    const currTS = new Date();
+    let endTS = new Date(doc.end_date);
+    endTS.setHours(0, 0, 0, 0);
+    //set hours
+    if (doc.end_index === 23) {
+        endTS.setDate(endTS.getDate() + 1);
+    } else {
+        endTS.setHours(doc.end_index + 1, 0, 0, 0);
+    }
+    if(currTS > endTS){
+        const difference = Math.abs(currTS.getTime() - endTS.getTime());
+
+        let hourDifference = difference  / 1000 / 3600;
+        const roundup = Math.ceil(hourDifference);
+        const pricing = await pricingController.getPricingById(doc.pricing_id);
+        const followup = pricing.follow_up;
+        doc.cost = doc.cost + roundup * followup;
+    }
+    return doc;
 }
 
 async function isValidToCancel(trn_id) {
