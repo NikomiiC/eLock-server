@@ -1,8 +1,6 @@
 const mongoose = require("mongoose");
 const request = require("supertest");
 const app = require("../index");
-
-// const axios = require('axios');
 const pricingController = require("../controller/pricingController");
 require("dotenv").config("../../env");
 

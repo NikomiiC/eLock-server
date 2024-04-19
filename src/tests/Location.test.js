@@ -1,19 +1,8 @@
 const mongoose = require("mongoose");
 const request = require("supertest");
 const app = require("../index");
-const axios = require('axios');
 const locationController = require("../controller/locationController");
 require("dotenv").config("../../env");
-
-let config = {
-    method: 'post',
-    maxBodyLength: Infinity,
-    url: process.env.BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + process.env.ADMIN_TOKEN
-    }
-};
 
 let location_id;
 beforeEach(async () => {
@@ -39,67 +28,87 @@ describe("Location", () => {
             }
         });
 
-        config.url = process.env.BASE_URL + '/create_location';
-        config.headers.Authorization = 'Bearer ' + process.env.ADMIN_TOKEN;
-        config.data = data;
-        const res = await axios.request(config);
-        const location = await locationController.getLocationById(res.data.payload._id);
-        location_id = res.data.payload._id;
+        const res = await request(app)
+            .post('/create_location')
+            .type('json')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
 
-        expect(res.status).toBe(200);
+        const location = await locationController.getLocationById(res.body.payload._id);
+        location_id = res.body.payload._id;
+
+        expect(res.statusCode).toBe(200);
         expect(location).toHaveProperty('area', "Area-Test");
         expect(location).toHaveProperty('formatted_address', "Address-Test");
         expect(location).toHaveProperty('postcode', "640111");
     });
 
     it("should return all location", async () => {
-        config.url = process.env.BASE_URL + '/all_locations';
-        config.method = 'get';
-        delete config.data;
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThan(0);
+
+        const res = await request(app)
+            .get('/all_locations')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThan(0);
     });
 
     it("should return location by location_id", async () => {
-        config.url = process.env.BASE_URL + '/location/' + location_id;
-        const res = await axios.request(config);
-        location = res.data.payload;
-        expect(res.status).toBe(200);
+
+        const res = await request(app)
+            .get('/location/' + location_id)
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        location = res.body.payload;
+        expect(res.statusCode).toBe(200);
         expect(location).toHaveProperty('area', "Area-Test");
         expect(location).toHaveProperty('formatted_address', 'Address-Test');
         expect(location).toHaveProperty('postcode', "640111");
     });
 
     it("should return locations by addressName", async () => {
-        config.url = process.env.BASE_URL + '/location/addressName/' + 'Test';
+        const res = await request(app)
+            .get('/location/addressName/' + 'Test')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
 
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThan(0);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThan(0);
     });
 
     it("should return locations by postcode", async () => {
-        config.url = process.env.BASE_URL + '/location_postcode/640111';
 
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBe(1);
+        const res = await request(app)
+            .get('/location_postcode/640111')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBe(1);
     });
 
     it("should return locations by area", async () => {
-        config.url = process.env.BASE_URL + '/locations/' + 'Area-Test';
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThan(0);
+
+        const res = await request(app)
+            .get('/locations/' + 'Area-Test')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThan(0);
     });
 
     it("should return locations by lon lat", async () => {
-        config.url = process.env.BASE_URL + '/locations/' + 103.721141 +'/' + 1.348159;
+        const res = await request(app)
+            .get('/locations/' + 103.721141 +'/' + 1.348159)
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
 
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload.length).toBeGreaterThan(0);
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload.length).toBeGreaterThan(0);
     });
 
     it("should update a location by id", async () => {
@@ -114,12 +123,15 @@ describe("Location", () => {
                 ]
             }
         });
-        config.method = 'post';
-        config.url = process.env.BASE_URL + '/update_location/' + location_id;
-        config.data = data;
-        const res = await axios.request(config);
-        location = res.data.payload;
-        expect(res.status).toBe(200);
+        const res = await request(app)
+            .post('/update_location/' + location_id)
+            .type('json')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
+
+        location = res.body.payload;
+        expect(res.statusCode).toBe(200);
         expect(location).toHaveProperty('area', "Area-Test-Update");
         expect(location).toHaveProperty('formatted_address', "Address-Test-Update");
         expect(location).toHaveProperty('postcode', "640111");
@@ -131,12 +143,16 @@ describe("Location", () => {
                 "661f6e11e3badb148f757a58"
             ]
         });
-        config.method = 'post';
-        config.url = process.env.BASE_URL + '/update_location/add_lockers/' + location_id;
-        config.data = data;
-        const res = await axios.request(config);
-        location = res.data.payload;
-        expect(res.status).toBe(200);
+
+        const res = await request(app)
+            .post('/update_location/add_lockers/' + location_id)
+            .type('json')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
+
+        location = res.body.payload;
+        expect(res.statusCode).toBe(200);
         expect(location.locker_list.includes('661f6e11e3badb148f757a58')).toBe(true);
     });
 
@@ -146,23 +162,28 @@ describe("Location", () => {
                 "661f6e11e3badb148f757a58"
             ]
         });
-        config.method = 'post';
-        config.url = process.env.BASE_URL + '/update_location/remove_lockers/' + location_id;
-        config.data = data;
-        const res = await axios.request(config);
-        location = res.data.payload;
-        expect(res.status).toBe(200);
+
+        const res = await request(app)
+            .post('/update_location/remove_lockers/' + location_id)
+            .type('json')
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN)
+            .send(data);
+
+        location = res.body.payload;
+        expect(res.statusCode).toBe(200);
         expect(location.locker_list).not.toContain('661f6e11e3badb148f757a58');
     });
 
     it('should delete location by id', async () => {
-        config.method = 'delete';
 
-        config.url = process.env.BASE_URL + '/delete_location/' + location_id;
-        delete config.data;
-        const res = await axios.request(config);
-        expect(res.status).toBe(200);
-        expect(res.data.payload).toBe(null);
+        const res = await request(app)
+            .delete('/delete_location/' + location_id)
+            .set('Content-Type',  'application/json')
+            .set('Authorization', 'Bearer ' + process.env.ADMIN_TOKEN);
+
+        expect(res.statusCode).toBe(200);
+        expect(res.body.payload).toBe(null);
     });
 });
 
