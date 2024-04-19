@@ -145,11 +145,34 @@ async function updateUser(params, uid) {
     }
 }
 
+async function updateBalance(doc, user_id) {
+    try {
+        return await User.updateOne(
+            {_id: user_id},
+            {$inc: {balance: doc.balance}}
+        )
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
+
+async function isBalanceEnough(doc, user_id){
+    try {
+        const user = await User.findById(user_id);
+        return user.balance >= doc.cost;
+    } catch (err) {
+        console.log(err.message);
+        sendError(err.message);
+    }
+}
 module.exports = {
     getRole, updateFeedbackList, getUserByEmail,
     removeTransactionId,
     updateTransactionId,
     getAllUsers,
     getUserById,
-    updateUser
+    updateUser,
+    updateBalance,
+    isBalanceEnough
 }

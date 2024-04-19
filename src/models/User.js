@@ -42,6 +42,10 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Transaction'
     }],
+    balance:{
+        type: Number,
+        default: 0
+    }
 });
 
 userSchema.pre('save', function (next) {

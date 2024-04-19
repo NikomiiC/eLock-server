@@ -76,12 +76,19 @@ router.post('/create_transaction', async (req, res) => {
     try {
         // 2 book per day + set locker passcode
         const validToBook = await transactionController.isLessThanTwoBookToday(params.user_id);
+        const validBalance = await userController.isBalanceEnough(params, params.user_id);
         if (validToBook) {
-            const transaction = await transactionController.createTransaction(params);
-            // set locker passcode, i dont do encrypt to keep it simple
-            // await lockerController.setPasscode(params.passcode, params.locker_id);
-            await lockerController.addTransactionToLocker(params.locker_id, transaction);
-            res.send(resResult(0, `Successfully create transaction`, transaction));
+            if(validBalance){
+                const transaction = await transactionController.createTransaction(params);
+                // set locker passcode, i dont do encrypt to keep it simple
+                // await lockerController.setPasscode(params.passcode, params.locker_id);
+                await lockerController.addTransactionToLocker(params.locker_id, transaction);
+                return res.send(resResult(0, `Successfully create transaction`, transaction));
+            }
+            else{
+                return res.status(422).send(resResult(1, "User has not enough balance, please top-up first"));
+            }
+
         } else {
             return res.status(422).send(resResult(1, "User has hit maximum 2 booking today."));
         }

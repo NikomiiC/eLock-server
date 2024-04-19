@@ -27,8 +27,7 @@ router.get('/all_users', async (req, res) => {
             //default by asc username
             const users = await userController.getAllUsers();
             res.send(resResult(0, `Successfully get users`, users));
-        }
-        else {
+        } else {
             return res.status(422).send(resResult(1, "User has no permission to create lockers."));
         }
     } catch (err) {
@@ -44,8 +43,7 @@ router.get('/user/:id', async (req, res) => {
             //default by asc username
             const user = await userController.getUserById(user_id);
             res.send(resResult(0, `Successfully get user`, user));
-        }
-        else{
+        } else {
             const user = await userController.getUserById(req.user._id);
             res.send(resResult(0, `Successfully get user`, user));
         }
@@ -60,13 +58,25 @@ router.post('/update_user', async (req, res) => {
     try {
         //action: chg_pw, update ALL CAPS
         let user = await userController.updateUser(params, req.user._id);
-        if(params.action === CHG_PW){
+        if (params.action === CHG_PW) {
             const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY');
-            res.send(resResult(0, 'Successfully change password', {token: token, user: user}));
+            return res.send(resResult(0, 'Successfully change password', {token: token, user: user}));
+        } else {
+            return res.send(resResult(0, 'Successfully update user', user));
         }
-        else{
-            res.send(resResult(0, 'Successfully update user', user));
-        }
+
+    } catch (err) {
+        return res.status(422).send(resResult(1, err.message));
+    }
+});
+
+router.post('/updateBalance', async (req, res) => {
+    // pass username, gender and dob even not updating
+    const params = req.body;
+    try {
+        let user = await userController.updateBalance(params, req.user._id);
+
+        return res.send(resResult(0, 'Successfully update user', user));
 
     } catch (err) {
         return res.status(422).send(resResult(1, err.message));
