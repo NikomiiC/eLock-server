@@ -54,7 +54,6 @@ async function getLocationsByLonLat(lon, lat) {
                     near: { type: "Point", coordinates: [parseFloat(lon), parseFloat(lat)] },
                     distanceField: "dist.calculated",
                     maxDistance: 5000,//meter
-                    //query: { category: "Parks" },
                     includeLocs: "dist.location",
                     spherical: true
                 }

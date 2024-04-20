@@ -56,8 +56,8 @@ app.get('/', requireAuth, (req, res) => {
 });
 
 //NOTE: comment out listen port when run test env
-app.listen(8080, () => {
-    console.log('listening on port 8080 ');
+app.listen(8081, () => {
+    console.log('listening on port 8081 ');
 });
 
 module.exports = app;
