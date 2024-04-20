@@ -33,7 +33,7 @@ router.get('/all_transactions', async (req, res) => {
         const role = await userController.getRole(req);
         if (role === ADMIN) {
             const transactions = await transactionController.getAllTransactions(status);
-            res.send(resResult(0, 'Successfully get all transactions', transactions));
+            return res.send(resResult(0, 'Successfully get all transactions', transactions));
         } else {
             return res.status(422).send(resResult(1, "User has no permission to get all transactions."));
         }
@@ -46,19 +46,18 @@ router.get('/user_all_transaction', async (req, res) => {
     const user_id = req.query.user_id; // for admin to query for specific user's transaction, not a good practice as expose user_id in url
     const status = req.query.status;
 
-    //todo: add filter terms, pending test
     try {
         const role = await userController.getRole(req);
-        if (role === ADMIN && user_id !== undefined) {
+        if (role === ADMIN && !serviceUtil.isStringValNullOrEmpty(user_id)) {
             const transactions = await transactionController.getAllUserTransactions(user_id, status);
-            res.send(resResult(0, 'Successfully get all transactions', transactions));
-        } else if (role === ADMIN && user_id === undefined) {
+            return res.send(resResult(0, 'Successfully get all transactions', transactions));
+        } else if (role === ADMIN && serviceUtil.isStringValNullOrEmpty(user_id)) {
             const transactions = await transactionController.getAllTransactions(status);
-            res.send(resResult(0, 'Successfully get all transactions', transactions));
+            return res.send(resResult(0, 'Successfully get all transactions', transactions));
         } else {
             //user
             const transactions = await transactionController.getAllUserTransactions(req.user._id, status);
-            res.send(resResult(0, 'Successfully get all transactions', transactions));
+            return res.send(resResult(0, 'Successfully get all transactions', transactions));
         }
 
     } catch (err) {
