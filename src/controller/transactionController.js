@@ -126,6 +126,8 @@ async function createTransaction(doc) {
         const currentDatetime = new Date();
         //check if any trn with same locker_id with same slots using
 
+
+
         const overlapTrnLength = await getOverlapTransaction(doc.locker_id, doc.start_index, doc.end_index, doc.start_date, doc.end_date);
         if (overlapTrnLength) {
             sendError("Locker is occupied in current slot.");
@@ -137,8 +139,8 @@ async function createTransaction(doc) {
             locker_id: new mongoose.Types.ObjectId(doc.locker_id),
             pricing_id: doc.pricing_id,
             cost: doc.cost,
-            create_datetime: currentDatetime,
-            latest_update_datetime: currentDatetime,
+            create_datetime: doc.create_datetime, //note: change to get from front end
+            latest_update_datetime: doc.latest_update_datetime,
             start_index: doc.start_index,
             end_index: doc.end_index,
             start_date: doc.start_date,
@@ -470,7 +472,7 @@ async function updateTransactionByCurrentDatetime() {
             },
             {status: ONGOING, latest_update_datetime: new Date()}
         );
-        await Transaction.updateMany(
+        await Transaction.updateMany(//todo: pending test
             {
                 start_date: {"$gte": currentDateTime},
                 end_date: {"$lt": nextDay},
@@ -478,6 +480,14 @@ async function updateTransactionByCurrentDatetime() {
                 start_index: {"$lte": currentIndex}
             },
             {status: ONGOING, latest_update_datetime: new Date()}
+        );
+        // if user not start using locker and the booking is expire
+        await Transaction.updateMany(
+            {
+                end_date: {"$lte": currentDateTime},
+                status: BOOKED
+            },
+            {status: COMPLETED, latest_update_datetime: new Date()}
         );
         //const ongoingLockerList = await Transaction.find({status: ONGOING}, {_id: 1, locker_id: 1});
         // update locker status and trn_id, user update themself

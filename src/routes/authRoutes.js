@@ -28,7 +28,7 @@ router.post('/signup', async (req, res) => {
         //email, subject, text
         const message = `Hi There! You have recently visited eLockHub and register with your email. Please follow the given link to verify your email.
         
-		http://localhost:8080/verify/${user._id}/${verification_token.token}`;
+		https://elock-server.onrender.com/verify/${user._id}/${verification_token.token}`;
         //const message = `${process.env.BASE_URL}/user/verify/${user.id}/${token.token}`;
 
         await sendEmail(email, "Verify Email", message);
