@@ -7,6 +7,7 @@ const pricingController = require("../controller/pricingController");
 const userController = require("../controller/userController");
 const serviceUtil = require("../controller/serviceController");
 const lockerController = require("../controller/lockerController");
+const sendEmail = require("../util/sendEmail");
 const Transaction = mongoose.model('Transaction');
 const router = express.Router();
 router.use(requireAuth); // require user to sign in first
@@ -82,6 +83,12 @@ router.post('/create_transaction', async (req, res) => {
                 // set locker passcode, i dont do encrypt to keep it simple
                 // await lockerController.setPasscode(params.passcode, params.locker_id);
                 await lockerController.addTransactionToLocker(params.locker_id, transaction);
+
+                const message = "Hi There! You have recently visited eLockHub and recently rented a locker with us." + "\n\n Your details:\n\n"; + `${transaction}`
+                //const message = `${process.env.BASE_URL}/user/verify/${user.id}/${token.token}`;
+                const user = await userController.getUserById(transaction.user_id);
+
+                await sendEmail(user.email, "Verify Email", message);
                 return res.send(resResult(0, `Successfully create transaction`, transaction));
             }
             else{
